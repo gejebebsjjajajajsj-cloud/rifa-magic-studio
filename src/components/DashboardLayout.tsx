@@ -10,7 +10,8 @@ import {
   LogOut,
   Menu,
   X,
-  User
+  User,
+  Eye,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { Button } from "./ui/button";
@@ -115,14 +116,14 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
             {/* Pré-visualização do site do cliente */}
             <a
-              href="/"
+              href="/explorar"
               target="_blank"
               rel="noreferrer"
               onClick={() => setSidebarOpen(false)}
               className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium text-muted-foreground hover:bg-muted hover:text-foreground mt-2"
             >
-              <LayoutDashboard size={20} />
-              <span>Pré-visualizar site do cliente</span>
+              <Eye size={20} />
+              <span>Ver site do cliente</span>
             </a>
           </nav>
 

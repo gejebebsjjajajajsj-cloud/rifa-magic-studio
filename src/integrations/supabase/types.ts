@@ -44,6 +44,69 @@ export type Database = {
         }
         Relationships: []
       }
+      raffles: {
+        Row: {
+          banner_url: string | null
+          button_color: string | null
+          category: string | null
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          image_url: string | null
+          name: string
+          numbers_sold: number
+          pix_key: string | null
+          price_per_number: number
+          primary_color: string | null
+          status: string
+          total_earned: number
+          total_numbers: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          banner_url?: string | null
+          button_color?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          numbers_sold?: number
+          pix_key?: string | null
+          price_per_number?: number
+          primary_color?: string | null
+          status?: string
+          total_earned?: number
+          total_numbers?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          banner_url?: string | null
+          button_color?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          numbers_sold?: number
+          pix_key?: string | null
+          price_per_number?: number
+          primary_color?: string | null
+          status?: string
+          total_earned?: number
+          total_numbers?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

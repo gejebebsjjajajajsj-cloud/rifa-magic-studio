@@ -156,7 +156,7 @@ const CriarRifa = () => {
       pix_key: formData.pixKey,
       image_url: formData.imageUrl || null,
       banner_url: formData.bannerUrl || null,
-      status: "pending_payment",
+      status: "published",
     }).select().single();
 
     if (error) {
@@ -171,10 +171,10 @@ const CriarRifa = () => {
 
     toast({
       title: "Rifa criada!",
-      description: "Redirecionando para pagamento...",
+      description: "Sua rifa já está publicada. Você pode pré-visualizar e compartilhar o link.",
     });
     
-    navigate("/pagamento-taxa", { state: { raffleId: data.id } });
+    navigate("/rifas");
   };
 
   const renderStepContent = () => {

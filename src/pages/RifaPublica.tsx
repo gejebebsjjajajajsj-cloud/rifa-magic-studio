@@ -96,7 +96,6 @@ const RifaPublica = () => {
         .from("raffles")
         .select("*")
         .eq("id", id)
-        .in("status", ["published", "pending_payment", "draft"])
         .maybeSingle();
 
       if (raffleError || !raffleData) {

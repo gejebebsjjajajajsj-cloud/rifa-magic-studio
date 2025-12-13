@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { Gift, Sparkles, Star, Heart, Zap, ArrowRight } from "lucide-react";
 
-const Index = () => {
+const Landing = () => {
   return (
     <div className="min-h-screen bg-background overflow-hidden">
       {/* Header */}
@@ -176,4 +176,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Landing;

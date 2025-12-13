@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/Logo";
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Check } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/hooks/useAuth";
 
 const Cadastro = () => {
   const [name, setName] = useState("");
@@ -17,6 +18,13 @@ const Cadastro = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signUp, user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +33,15 @@ const Cadastro = () => {
       toast({
         title: "Erro",
         description: "As senhas não coincidem.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Erro",
+        description: "A senha deve ter pelo menos 6 caracteres.",
         variant: "destructive",
       });
       return;
@@ -41,15 +58,34 @@ const Cadastro = () => {
 
     setLoading(true);
 
-    // Simulating signup
-    setTimeout(() => {
+    const { error } = await signUp(email, password, name);
+
+    if (error) {
       setLoading(false);
+      let message = "Erro ao criar conta. Tente novamente.";
+      
+      if (error.message.includes("User already registered")) {
+        message = "Este email já está cadastrado. Tente fazer login.";
+      } else if (error.message.includes("Invalid email")) {
+        message = "Email inválido. Verifique o endereço informado.";
+      } else if (error.message.includes("Password")) {
+        message = "A senha deve ter pelo menos 6 caracteres.";
+      }
+      
       toast({
-        title: "Conta criada!",
-        description: "Bem-vinda ao RifaFácil! 🎉",
+        title: "Erro",
+        description: message,
+        variant: "destructive",
       });
-      navigate("/dashboard");
-    }, 1000);
+      return;
+    }
+
+    setLoading(false);
+    toast({
+      title: "Conta criada!",
+      description: "Bem-vinda ao RifaFácil! 🎉",
+    });
+    navigate("/dashboard");
   };
 
   return (

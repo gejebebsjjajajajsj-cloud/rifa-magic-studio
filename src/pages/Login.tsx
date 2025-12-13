@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/Logo";
 import { Eye, EyeOff, Mail, Lock, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -13,20 +14,44 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn, user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulating login
-    setTimeout(() => {
+    const { error } = await signIn(email, password);
+
+    if (error) {
       setLoading(false);
+      let message = "Erro ao fazer login. Tente novamente.";
+      
+      if (error.message.includes("Invalid login credentials")) {
+        message = "Email ou senha incorretos.";
+      } else if (error.message.includes("Email not confirmed")) {
+        message = "Por favor, confirme seu email antes de fazer login.";
+      }
+      
       toast({
-        title: "Login realizado!",
-        description: "Bem-vinda de volta! 🎉",
+        title: "Erro",
+        description: message,
+        variant: "destructive",
       });
-      navigate("/dashboard");
-    }, 1000);
+      return;
+    }
+
+    setLoading(false);
+    toast({
+      title: "Login realizado!",
+      description: "Bem-vinda de volta! 🎉",
+    });
+    navigate("/dashboard");
   };
 
   return (

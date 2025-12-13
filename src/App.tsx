@@ -10,12 +10,14 @@ import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
 import Dashboard from "./pages/Dashboard";
 import CriarRifa from "./pages/CriarRifa";
+import EditarRifa from "./pages/EditarRifa";
 import MinhasRifas from "./pages/MinhasRifas";
 import Pagamentos from "./pages/Pagamentos";
 import PagamentoTaxa from "./pages/PagamentoTaxa";
 import Configuracoes from "./pages/Configuracoes";
 import Suporte from "./pages/Suporte";
 import RifaPublica from "./pages/RifaPublica";
+import RifasPublicas from "./pages/RifasPublicas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,9 +33,11 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/cadastro" element={<Cadastro />} />
+            <Route path="/explorar" element={<RifasPublicas />} />
             <Route path="/rifa/:id" element={<RifaPublica />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/criar-rifa" element={<ProtectedRoute><CriarRifa /></ProtectedRoute>} />
+            <Route path="/editar-rifa/:id" element={<ProtectedRoute><EditarRifa /></ProtectedRoute>} />
             <Route path="/rifas" element={<ProtectedRoute><MinhasRifas /></ProtectedRoute>} />
             <Route path="/pagamentos" element={<ProtectedRoute><Pagamentos /></ProtectedRoute>} />
             <Route path="/pagamento-taxa" element={<ProtectedRoute><PagamentoTaxa /></ProtectedRoute>} />

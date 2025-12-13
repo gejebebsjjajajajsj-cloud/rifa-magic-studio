@@ -266,13 +266,20 @@ const MinhasRifas = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
-                      {/* Botão Pré-visualizar - sempre visível */}
+                    <div className="flex items-center gap-1 w-full sm:w-auto">
+                      {/* Botão Editar */}
+                      <Link to={`/editar-rifa/${raffle.id}`}>
+                        <Button variant="outline" size="sm" className="h-7 px-2">
+                          <Edit size={12} />
+                          <span className="ml-1 text-[10px]">Editar</span>
+                        </Button>
+                      </Link>
+                      
+                      {/* Botão Pré-visualizar */}
                       <Link to={`/rifa/${raffle.id}`} target="_blank">
-                        <Button variant="soft" size="sm" className="h-8 sm:h-9 px-2 sm:px-3">
-                          <Eye size={14} className="sm:hidden" />
-                          <Eye size={16} className="hidden sm:block" />
-                          <span className="ml-1 text-xs sm:text-sm hidden xs:inline">Pré-ver</span>
+                        <Button variant="soft" size="sm" className="h-7 px-2">
+                          <Eye size={12} />
+                          <span className="ml-1 text-[10px]">Ver</span>
                         </Button>
                       </Link>
                       
@@ -281,29 +288,21 @@ const MinhasRifas = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => copyLink(raffle.id)}
-                          className="h-8 sm:h-9 px-2 sm:px-3"
+                          className="h-7 px-2"
                         >
-                          <Copy size={14} className="sm:hidden" />
-                          <Copy size={16} className="hidden sm:block" />
-                          <span className="ml-1 text-xs sm:text-sm">Link</span>
+                          <Copy size={12} />
+                          <span className="ml-1 text-[10px]">Link</span>
                         </Button>
                       )}
-                      {raffle.status === "pending_payment" && (
-                        <Link to="/pagamento-taxa">
-                          <Button size="sm" className="h-8 sm:h-9 px-2 sm:px-3">
-                            Pagar
-                          </Button>
-                        </Link>
-                      )}
+                      
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="text-destructive hover:bg-destructive/10 h-8 w-8 sm:h-9 sm:w-9"
+                            className="text-destructive hover:bg-destructive/10 h-7 w-7"
                           >
-                            <Trash2 size={14} className="sm:hidden" />
-                            <Trash2 size={18} className="hidden sm:block" />
+                            <Trash2 size={12} />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>

@@ -513,10 +513,10 @@ const CriarRifa = () => {
     <DashboardLayout>
       <div className="max-w-2xl mx-auto">
         {/* Progress Steps */}
-        <div className="mb-8">
+        <div className="mb-4 sm:mb-6 lg:mb-8">
           <div className="flex items-center justify-between relative">
             {/* Progress Line */}
-            <div className="absolute top-5 left-0 right-0 h-1 bg-muted rounded-full -z-10">
+            <div className="absolute top-4 sm:top-5 left-0 right-0 h-0.5 sm:h-1 bg-muted rounded-full -z-10">
               <div
                 className="h-full gradient-primary rounded-full transition-all duration-500"
                 style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
@@ -526,23 +526,28 @@ const CriarRifa = () => {
             {steps.map((step) => (
               <div
                 key={step.id}
-                className="flex flex-col items-center gap-2"
+                className="flex flex-col items-center gap-1 sm:gap-2"
               >
                 <div
-                  className={`h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                  className={`h-8 w-8 sm:h-10 sm:w-10 rounded-full flex items-center justify-center transition-all duration-300 ${
                     step.id <= currentStep
                       ? "gradient-primary text-primary-foreground shadow-soft"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {step.id < currentStep ? (
-                    <Check size={18} />
+                    <Check size={14} className="sm:hidden" />
                   ) : (
-                    <step.icon size={18} />
+                    <step.icon size={14} className="sm:hidden" />
+                  )}
+                  {step.id < currentStep ? (
+                    <Check size={18} className="hidden sm:block" />
+                  ) : (
+                    <step.icon size={18} className="hidden sm:block" />
                   )}
                 </div>
                 <span
-                  className={`text-xs font-medium hidden sm:block ${
+                  className={`text-[10px] sm:text-xs font-medium text-center ${
                     step.id <= currentStep
                       ? "text-foreground"
                       : "text-muted-foreground"
@@ -556,29 +561,34 @@ const CriarRifa = () => {
         </div>
 
         {/* Step Content */}
-        <Card className="mb-6">
-          <CardContent className="p-6">{renderStepContent()}</CardContent>
+        <Card className="mb-4 sm:mb-6">
+          <CardContent className="p-4 sm:p-6">{renderStepContent()}</CardContent>
         </Card>
 
         {/* Navigation Buttons */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <Button
             variant="outline"
             onClick={prevStep}
             disabled={currentStep === 1}
+            size="sm"
+            className="sm:size-default"
           >
-            <ArrowLeft size={18} />
-            Voltar
+            <ArrowLeft size={16} className="sm:hidden" />
+            <ArrowLeft size={18} className="hidden sm:block" />
+            <span className="hidden sm:inline">Voltar</span>
           </Button>
 
           {currentStep < 5 ? (
-            <Button onClick={nextStep}>
-              Próximo
-              <ArrowRight size={18} />
+            <Button onClick={nextStep} size="sm" className="sm:size-default">
+              <span className="hidden sm:inline">Próximo</span>
+              <span className="sm:hidden">Próximo</span>
+              <ArrowRight size={16} className="sm:hidden" />
+              <ArrowRight size={18} className="hidden sm:block" />
             </Button>
           ) : (
-            <Button onClick={handlePublish} disabled={loading}>
-              {loading ? "Processando..." : "Publicar e pagar taxa"}
+            <Button onClick={handlePublish} disabled={loading} size="sm" className="sm:size-default text-xs sm:text-sm">
+              {loading ? "Processando..." : "Publicar e pagar"}
             </Button>
           )}
         </div>

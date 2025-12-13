@@ -75,33 +75,34 @@ const MinhasRifas = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 animate-fade-in">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Minhas Rifas</h1>
-            <p className="text-muted-foreground">Gerencie todas as suas rifas</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Minhas Rifas</h1>
+            <p className="text-sm text-muted-foreground">Gerencie todas as suas rifas</p>
           </div>
           <Link to="/criar-rifa">
-            <Button>
-              <PlusCircle size={18} />
+            <Button size="sm" className="sm:size-default">
+              <PlusCircle size={16} className="sm:hidden" />
+              <PlusCircle size={18} className="hidden sm:block" />
               Nova Rifa
             </Button>
           </Link>
         </div>
 
         {/* Search and Filter */}
-        <div className="flex flex-col sm:flex-row gap-3 animate-fade-in stagger-1">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
+        <div className="flex flex-col gap-3 animate-fade-in stagger-1">
+          <div className="relative">
+            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
             <Input
               placeholder="Buscar rifas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12"
+              className="pl-10 sm:pl-12 text-sm"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-1">
             {[
               { key: "all", label: "Todas" },
               { key: "published", label: "Publicadas" },
@@ -113,6 +114,7 @@ const MinhasRifas = () => {
                 variant={filter === f.key ? "default" : "outline"}
                 size="sm"
                 onClick={() => setFilter(f.key as typeof filter)}
+                className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3"
               >
                 {f.label}
               </Button>
@@ -121,20 +123,21 @@ const MinhasRifas = () => {
         </div>
 
         {/* Raffles List */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {filteredRaffles.length === 0 ? (
             <Card className="animate-fade-in">
-              <CardContent className="p-12 text-center">
-                <Ticket size={48} className="mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">
+              <CardContent className="p-8 sm:p-12 text-center">
+                <Ticket size={36} className="mx-auto text-muted-foreground mb-3 sm:mb-4 sm:hidden" />
+                <Ticket size={48} className="mx-auto text-muted-foreground mb-3 sm:mb-4 hidden sm:block" />
+                <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">
                   Nenhuma rifa encontrada
                 </h3>
-                <p className="text-muted-foreground mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   {searchTerm ? "Tente buscar por outro termo." : "Crie sua primeira rifa agora!"}
                 </p>
                 <Link to="/criar-rifa">
-                  <Button>
-                    <PlusCircle size={18} />
+                  <Button size="sm" className="sm:size-default">
+                    <PlusCircle size={16} />
                     Criar Rifa
                   </Button>
                 </Link>
@@ -147,11 +150,11 @@ const MinhasRifas = () => {
                 className="animate-fade-in"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                     {/* Icon */}
                     <div
-                      className={`h-14 w-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                      className={`h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 ${
                         raffle.status === "published"
                           ? "bg-mint"
                           : raffle.status === "pending"
@@ -163,23 +166,23 @@ const MinhasRifas = () => {
                     </div>
 
                     {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-foreground truncate">
+                    <div className="flex-1 min-w-0 w-full sm:w-auto">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <h3 className="font-semibold text-foreground text-sm sm:text-base truncate max-w-[180px] sm:max-w-none">
                           {raffle.name}
                         </h3>
                         {getStatusBadge(raffle.status)}
                       </div>
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                         <span>
                           {raffle.sold}/{raffle.total} vendidos
                         </span>
-                        <span>R$ {raffle.price.toFixed(2)}/número</span>
-                        <span>Encerra: {new Date(raffle.endDate).toLocaleDateString("pt-BR")}</span>
+                        <span>R$ {raffle.price.toFixed(2)}/nº</span>
+                        <span className="hidden sm:inline">Encerra: {new Date(raffle.endDate).toLocaleDateString("pt-BR")}</span>
                       </div>
                       {raffle.status === "published" && (
                         <div className="mt-2 w-full max-w-xs">
-                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div className="h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
                             <div
                               className="h-full gradient-primary transition-all duration-500"
                               style={{ width: `${(raffle.sold / raffle.total) * 100}%` }}
@@ -190,17 +193,20 @@ const MinhasRifas = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
-                        <Eye size={16} />
-                        <span className="sm:hidden lg:inline">Ver</span>
+                    <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+                      <Button variant="outline" size="sm" className="flex-1 sm:flex-none h-8 sm:h-9 px-2 sm:px-3">
+                        <Eye size={14} className="sm:hidden" />
+                        <Eye size={16} className="hidden sm:block" />
+                        <span className="ml-1 text-xs sm:text-sm sm:hidden lg:inline">Ver</span>
                       </Button>
-                      <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
-                        <Edit size={16} />
-                        <span className="sm:hidden lg:inline">Editar</span>
+                      <Button variant="outline" size="sm" className="flex-1 sm:flex-none h-8 sm:h-9 px-2 sm:px-3">
+                        <Edit size={14} className="sm:hidden" />
+                        <Edit size={16} className="hidden sm:block" />
+                        <span className="ml-1 text-xs sm:text-sm sm:hidden lg:inline">Editar</span>
                       </Button>
-                      <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10">
-                        <Trash2 size={18} />
+                      <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-8 w-8 sm:h-9 sm:w-9">
+                        <Trash2 size={14} className="sm:hidden" />
+                        <Trash2 size={18} className="hidden sm:block" />
                       </Button>
                     </div>
                   </div>

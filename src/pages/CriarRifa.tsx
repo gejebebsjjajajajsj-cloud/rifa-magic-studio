@@ -1,0 +1,590 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { DashboardLayout } from "@/components/DashboardLayout";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import {
+  FileText,
+  Hash,
+  Image,
+  CreditCard,
+  CheckCircle,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  Upload,
+  Palette,
+} from "lucide-react";
+
+const steps = [
+  { id: 1, title: "Informações", icon: FileText },
+  { id: 2, title: "Números", icon: Hash },
+  { id: 3, title: "Aparência", icon: Image },
+  { id: 4, title: "Pagamento", icon: CreditCard },
+  { id: 5, title: "Revisão", icon: CheckCircle },
+];
+
+const categories = [
+  "Eletrônicos",
+  "Beleza",
+  "Moda",
+  "Casa",
+  "Experiências",
+  "Outros",
+];
+
+const colors = [
+  { name: "Rosa", value: "#EC4899" },
+  { name: "Roxo", value: "#8B5CF6" },
+  { name: "Azul", value: "#3B82F6" },
+  { name: "Verde", value: "#10B981" },
+  { name: "Laranja", value: "#F97316" },
+  { name: "Vermelho", value: "#EF4444" },
+];
+
+const CriarRifa = () => {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    category: "",
+    endDate: "",
+    totalNumbers: 100,
+    pricePerNumber: 10,
+    primaryColor: "#EC4899",
+    buttonColor: "#EC4899",
+    pixKey: "",
+    pixKeyType: "cpf",
+  });
+
+  const updateFormData = (key: string, value: string | number) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const nextStep = () => {
+    if (currentStep < 5) setCurrentStep(currentStep + 1);
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
+
+  const handlePublish = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      toast({
+        title: "Rifa criada!",
+        description: "Redirecionando para pagamento...",
+      });
+      navigate("/pagamento-taxa");
+    }, 1000);
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-2">
+                Informações Básicas
+              </h2>
+              <p className="text-muted-foreground">
+                Preencha os dados principais da sua rifa
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Nome da Rifa *
+                </label>
+                <Input
+                  placeholder="Ex: Rifa do iPhone 15 Pro"
+                  value={formData.name}
+                  onChange={(e) => updateFormData("name", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Descrição *
+                </label>
+                <Textarea
+                  placeholder="Descreva o prêmio e as regras da rifa..."
+                  value={formData.description}
+                  onChange={(e) => updateFormData("description", e.target.value)}
+                  rows={4}
+                  className="rounded-xl border-2 resize-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Categoria *
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => updateFormData("category", cat)}
+                      className={`px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        formData.category === cat
+                          ? "gradient-primary text-primary-foreground shadow-soft"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Data de Término *
+                </label>
+                <Input
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => updateFormData("endDate", e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-2">
+                Configuração dos Números
+              </h2>
+              <p className="text-muted-foreground">
+                Defina a quantidade e preço dos números
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Quantidade de Números *
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[50, 100, 150, 200].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => updateFormData("totalNumbers", num)}
+                      className={`px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        formData.totalNumbers === num
+                          ? "gradient-primary text-primary-foreground shadow-soft"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+                <Input
+                  type="number"
+                  placeholder="Ou digite um valor personalizado"
+                  value={formData.totalNumbers}
+                  onChange={(e) =>
+                    updateFormData("totalNumbers", parseInt(e.target.value))
+                  }
+                  className="mt-2"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Preço por Número (R$) *
+                </label>
+                <Input
+                  type="number"
+                  placeholder="10.00"
+                  value={formData.pricePerNumber}
+                  onChange={(e) =>
+                    updateFormData("pricePerNumber", parseFloat(e.target.value))
+                  }
+                />
+              </div>
+
+              {/* Preview Grid */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Preview dos Números
+                </label>
+                <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 p-4 bg-muted/50 rounded-2xl">
+                  {Array.from({ length: Math.min(20, formData.totalNumbers) }).map(
+                    (_, i) => (
+                      <div
+                        key={i}
+                        className="aspect-square rounded-lg bg-card border-2 border-border flex items-center justify-center text-xs font-bold text-muted-foreground hover:border-primary transition-colors"
+                      >
+                        {String(i + 1).padStart(2, "0")}
+                      </div>
+                    )
+                  )}
+                  {formData.totalNumbers > 20 && (
+                    <div className="aspect-square rounded-lg bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">
+                      +{formData.totalNumbers - 20}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Card className="bg-secondary/30 border-0">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Valor total da rifa:</span>
+                    <span className="text-xl font-bold text-foreground">
+                      R$ {(formData.totalNumbers * formData.pricePerNumber).toFixed(2)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-2">
+                Mídia e Aparência
+              </h2>
+              <p className="text-muted-foreground">
+                Personalize o visual da sua rifa
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Imagem Principal
+                </label>
+                <div className="border-2 border-dashed border-border rounded-2xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
+                  <Upload size={32} className="mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    Clique ou arraste uma imagem
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    PNG, JPG até 5MB
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Banner (opcional)
+                </label>
+                <div className="border-2 border-dashed border-border rounded-2xl p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
+                  <Upload size={24} className="mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    Adicionar banner
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Palette size={18} />
+                  Cor Principal
+                </label>
+                <div className="flex gap-2 flex-wrap">
+                  {colors.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() => updateFormData("primaryColor", color.value)}
+                      className={`h-12 w-12 rounded-xl transition-all duration-200 ${
+                        formData.primaryColor === color.value
+                          ? "ring-4 ring-offset-2 ring-primary scale-110"
+                          : "hover:scale-105"
+                      }`}
+                      style={{ backgroundColor: color.value }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  Cor dos Botões
+                </label>
+                <div className="flex gap-2 flex-wrap">
+                  {colors.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() => updateFormData("buttonColor", color.value)}
+                      className={`h-12 w-12 rounded-xl transition-all duration-200 ${
+                        formData.buttonColor === color.value
+                          ? "ring-4 ring-offset-2 ring-primary scale-110"
+                          : "hover:scale-105"
+                      }`}
+                      style={{ backgroundColor: color.value }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-2">
+                Meios de Pagamento
+              </h2>
+              <p className="text-muted-foreground">
+                Configure como receberá os pagamentos
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <Card className="border-2 border-primary/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-10 w-10 gradient-primary rounded-xl flex items-center justify-center">
+                      <span className="text-primary-foreground font-bold text-sm">PIX</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-foreground">Pix</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Receba instantaneamente
+                      </p>
+                    </div>
+                    <Check className="ml-auto text-primary" size={24} />
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">
+                        Tipo de Chave
+                      </label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {["CPF", "Email", "Telefone", "Aleatória"].map((type) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() =>
+                              updateFormData("pixKeyType", type.toLowerCase())
+                            }
+                            className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                              formData.pixKeyType === type.toLowerCase()
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {type}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">
+                        Chave Pix
+                      </label>
+                      <Input
+                        placeholder="Digite sua chave Pix"
+                        value={formData.pixKey}
+                        onChange={(e) => updateFormData("pixKey", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-border opacity-60">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-muted rounded-xl flex items-center justify-center">
+                      <CreditCard size={20} className="text-muted-foreground" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-foreground">Cartão de Crédito</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Em breve
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+
+      case 5:
+        return (
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-2">
+                Revisão Final
+              </h2>
+              <p className="text-muted-foreground">
+                Confira todas as informações antes de publicar
+              </p>
+            </div>
+
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Nome</p>
+                    <p className="font-semibold text-foreground">
+                      {formData.name || "Não informado"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Categoria</p>
+                    <p className="font-semibold text-foreground">
+                      {formData.category || "Não informado"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Números</p>
+                    <p className="font-semibold text-foreground">
+                      {formData.totalNumbers}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Preço/número</p>
+                    <p className="font-semibold text-foreground">
+                      R$ {formData.pricePerNumber.toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Término</p>
+                    <p className="font-semibold text-foreground">
+                      {formData.endDate || "Não informado"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Valor total</p>
+                    <p className="font-semibold text-foreground">
+                      R$ {(formData.totalNumbers * formData.pricePerNumber).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-border">
+                  <p className="text-sm text-muted-foreground">Descrição</p>
+                  <p className="text-foreground">
+                    {formData.description || "Não informado"}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-accent/10 border-accent/30">
+              <CardContent className="p-4">
+                <p className="text-sm text-foreground">
+                  ⚠️ Sua rifa só será publicada após o pagamento da taxa de publicação.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="max-w-2xl mx-auto">
+        {/* Progress Steps */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between relative">
+            {/* Progress Line */}
+            <div className="absolute top-5 left-0 right-0 h-1 bg-muted rounded-full -z-10">
+              <div
+                className="h-full gradient-primary rounded-full transition-all duration-500"
+                style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+              />
+            </div>
+
+            {steps.map((step) => (
+              <div
+                key={step.id}
+                className="flex flex-col items-center gap-2"
+              >
+                <div
+                  className={`h-10 w-10 rounded-full flex items-center justify-center transition-all duration-300 ${
+                    step.id <= currentStep
+                      ? "gradient-primary text-primary-foreground shadow-soft"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {step.id < currentStep ? (
+                    <Check size={18} />
+                  ) : (
+                    <step.icon size={18} />
+                  )}
+                </div>
+                <span
+                  className={`text-xs font-medium hidden sm:block ${
+                    step.id <= currentStep
+                      ? "text-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {step.title}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Step Content */}
+        <Card className="mb-6">
+          <CardContent className="p-6">{renderStepContent()}</CardContent>
+        </Card>
+
+        {/* Navigation Buttons */}
+        <div className="flex items-center justify-between">
+          <Button
+            variant="outline"
+            onClick={prevStep}
+            disabled={currentStep === 1}
+          >
+            <ArrowLeft size={18} />
+            Voltar
+          </Button>
+
+          {currentStep < 5 ? (
+            <Button onClick={nextStep}>
+              Próximo
+              <ArrowRight size={18} />
+            </Button>
+          ) : (
+            <Button onClick={handlePublish} disabled={loading}>
+              {loading ? "Processando..." : "Publicar e pagar taxa"}
+            </Button>
+          )}
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default CriarRifa;

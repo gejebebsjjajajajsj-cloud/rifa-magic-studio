@@ -17,37 +17,37 @@ const Dashboard = () => {
     { 
       icon: Ticket, 
       label: "Total de Rifas", 
-      value: "5", 
+      value: "24", 
       color: "gradient-primary",
       iconColor: "text-primary-foreground"
     },
     { 
       icon: Check, 
       label: "Rifas Publicadas", 
-      value: "3", 
+      value: "18", 
       color: "bg-mint",
       iconColor: "text-foreground"
     },
     { 
       icon: Clock, 
       label: "Pendentes", 
-      value: "2", 
+      value: "6", 
       color: "bg-lavender",
       iconColor: "text-foreground"
     },
     { 
       icon: TrendingUp, 
-      label: "Arrecadado", 
-      value: "R$ 1.500", 
+      label: "Faturamento Hoje", 
+      value: "R$ 4.300", 
       color: "bg-peach",
       iconColor: "text-foreground"
     },
   ];
 
   const recentRaffles = [
-    { id: 1, name: "Rifa do iPhone 15", status: "published", sold: 45, total: 100 },
-    { id: 2, name: "Kit Maquiagem Completo", status: "pending", sold: 0, total: 50 },
-    { id: 3, name: "Vale Compras R$500", status: "published", sold: 80, total: 100 },
+    { id: 1, name: "Rifa do iPhone 15 Pro Max", status: "published", sold: 97, total: 100 },
+    { id: 2, name: "Kit Maquiagem Importada", status: "published", sold: 48, total: 50 },
+    { id: 3, name: "Vale Compras R$1.000", status: "published", sold: 100, total: 100 },
   ];
 
   return (

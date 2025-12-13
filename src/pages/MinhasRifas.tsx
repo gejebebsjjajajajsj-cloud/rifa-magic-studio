@@ -14,6 +14,7 @@ import {
   Search,
   ExternalLink,
   Copy,
+  Play,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -266,30 +267,31 @@ const MinhasRifas = () => {
 
                     {/* Actions */}
                     <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+                      {/* Botão Pré-visualizar - sempre visível */}
+                      <Link to={`/rifa/${raffle.id}`} target="_blank">
+                        <Button variant="soft" size="sm" className="h-8 sm:h-9 px-2 sm:px-3">
+                          <Eye size={14} className="sm:hidden" />
+                          <Eye size={16} className="hidden sm:block" />
+                          <span className="ml-1 text-xs sm:text-sm hidden xs:inline">Pré-ver</span>
+                        </Button>
+                      </Link>
+                      
                       {raffle.status === "published" && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => copyLink(raffle.id)}
-                            className="flex-1 sm:flex-none h-8 sm:h-9 px-2 sm:px-3"
-                          >
-                            <Copy size={14} className="sm:hidden" />
-                            <Copy size={16} className="hidden sm:block" />
-                            <span className="ml-1 text-xs sm:text-sm">Copiar link</span>
-                          </Button>
-                          <Link to={`/rifa/${raffle.id}`} target="_blank">
-                            <Button variant="outline" size="sm" className="h-8 sm:h-9 px-2 sm:px-3">
-                              <ExternalLink size={14} className="sm:hidden" />
-                              <ExternalLink size={16} className="hidden sm:block" />
-                            </Button>
-                          </Link>
-                        </>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyLink(raffle.id)}
+                          className="h-8 sm:h-9 px-2 sm:px-3"
+                        >
+                          <Copy size={14} className="sm:hidden" />
+                          <Copy size={16} className="hidden sm:block" />
+                          <span className="ml-1 text-xs sm:text-sm">Link</span>
+                        </Button>
                       )}
                       {raffle.status === "pending_payment" && (
                         <Link to="/pagamento-taxa">
                           <Button size="sm" className="h-8 sm:h-9 px-2 sm:px-3">
-                            Pagar taxa
+                            Pagar
                           </Button>
                         </Link>
                       )}

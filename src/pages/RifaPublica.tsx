@@ -79,11 +79,12 @@ const RifaPublica = () => {
     const fetchRaffle = async () => {
       if (!id) return;
 
+      // Busca a rifa - aceita published OU pending_payment (pré-visualização)
       const { data: raffleData, error: raffleError } = await supabase
         .from("raffles")
         .select("*")
         .eq("id", id)
-        .eq("status", "published")
+        .in("status", ["published", "pending_payment", "draft"])
         .maybeSingle();
 
       if (raffleError || !raffleData) {

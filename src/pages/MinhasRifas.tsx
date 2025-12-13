@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,55 +12,117 @@ import {
   Trash2, 
   PlusCircle,
   Search,
-  Filter
+  ExternalLink,
+  Copy,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Raffle {
-  id: number;
+  id: string;
   name: string;
-  status: "draft" | "pending" | "published";
-  sold: number;
-  total: number;
-  price: number;
-  endDate: string;
+  status: string;
+  numbers_sold: number;
+  total_numbers: number;
+  price_per_number: number;
+  end_date: string | null;
+  total_earned: number;
 }
 
 const MinhasRifas = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filter, setFilter] = useState<"all" | "published" | "pending" | "draft">("all");
+  const [filter, setFilter] = useState<"all" | "published" | "pending_payment" | "draft">("all");
+  const [raffles, setRaffles] = useState<Raffle[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const raffles: Raffle[] = [
-    { id: 1, name: "Rifa do iPhone 15 Pro Max", status: "published", sold: 45, total: 100, price: 15, endDate: "2024-02-15" },
-    { id: 2, name: "Kit Maquiagem Completo", status: "pending", sold: 0, total: 50, price: 10, endDate: "2024-02-20" },
-    { id: 3, name: "Vale Compras R$500", status: "published", sold: 80, total: 100, price: 8, endDate: "2024-02-10" },
-    { id: 4, name: "Airpods Pro 2", status: "draft", sold: 0, total: 80, price: 12, endDate: "2024-03-01" },
-    { id: 5, name: "Smart TV 55 polegadas", status: "published", sold: 120, total: 200, price: 20, endDate: "2024-02-25" },
-  ];
+  useEffect(() => {
+    const fetchRaffles = async () => {
+      if (!user) return;
 
-  const getStatusBadge = (status: Raffle["status"]) => {
-    const styles = {
+      const { data, error } = await supabase
+        .from("raffles")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (data) {
+        setRaffles(data);
+      }
+      setLoading(false);
+    };
+
+    fetchRaffles();
+  }, [user]);
+
+  const handleDelete = async (raffleId: string) => {
+    const { error } = await supabase
+      .from("raffles")
+      .delete()
+      .eq("id", raffleId);
+
+    if (error) {
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir a rifa",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setRaffles(raffles.filter(r => r.id !== raffleId));
+    toast({
+      title: "Rifa excluída",
+      description: "A rifa foi removida com sucesso",
+    });
+  };
+
+  const copyLink = (raffleId: string) => {
+    const url = `${window.location.origin}/rifa/${raffleId}`;
+    navigator.clipboard.writeText(url);
+    toast({
+      title: "Link copiado!",
+      description: "Compartilhe com seus clientes",
+    });
+  };
+
+  const getStatusBadge = (status: string) => {
+    const styles: Record<string, string> = {
       published: "bg-mint text-foreground",
-      pending: "bg-lavender text-foreground",
+      pending_payment: "bg-peach text-foreground",
       draft: "bg-muted text-muted-foreground",
     };
-    const labels = {
+    const labels: Record<string, string> = {
       published: "Publicada",
-      pending: "Pendente",
+      pending_payment: "Aguardando pagamento",
       draft: "Rascunho",
     };
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status]}`}>
-        {labels[status]}
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${styles[status] || styles.draft}`}>
+        {labels[status] || "Rascunho"}
       </span>
     );
   };
 
-  const getStatusIcon = (status: Raffle["status"]) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case "published":
         return <Check size={20} className="text-foreground" />;
-      case "pending":
+      case "pending_payment":
         return <Clock size={20} className="text-foreground" />;
       default:
         return <Edit size={20} className="text-muted-foreground" />;
@@ -106,7 +168,7 @@ const MinhasRifas = () => {
             {[
               { key: "all", label: "Todas" },
               { key: "published", label: "Publicadas" },
-              { key: "pending", label: "Pendentes" },
+              { key: "pending_payment", label: "Pendentes" },
               { key: "draft", label: "Rascunhos" },
             ].map((f) => (
               <Button
@@ -124,7 +186,13 @@ const MinhasRifas = () => {
 
         {/* Raffles List */}
         <div className="space-y-3 sm:space-y-4">
-          {filteredRaffles.length === 0 ? (
+          {loading ? (
+            <Card className="animate-fade-in">
+              <CardContent className="p-8 text-center text-muted-foreground">
+                Carregando...
+              </CardContent>
+            </Card>
+          ) : filteredRaffles.length === 0 ? (
             <Card className="animate-fade-in">
               <CardContent className="p-8 sm:p-12 text-center">
                 <Ticket size={36} className="mx-auto text-muted-foreground mb-3 sm:mb-4 sm:hidden" />
@@ -157,8 +225,8 @@ const MinhasRifas = () => {
                       className={`h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 ${
                         raffle.status === "published"
                           ? "bg-mint"
-                          : raffle.status === "pending"
-                          ? "bg-lavender"
+                          : raffle.status === "pending_payment"
+                          ? "bg-peach"
                           : "bg-muted"
                       }`}
                     >
@@ -175,17 +243,21 @@ const MinhasRifas = () => {
                       </div>
                       <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                         <span>
-                          {raffle.sold}/{raffle.total} vendidos
+                          {raffle.numbers_sold}/{raffle.total_numbers} vendidos
                         </span>
-                        <span>R$ {raffle.price.toFixed(2)}/nº</span>
-                        <span className="hidden sm:inline">Encerra: {new Date(raffle.endDate).toLocaleDateString("pt-BR")}</span>
+                        <span>R$ {Number(raffle.price_per_number).toFixed(2)}/nº</span>
+                        {raffle.end_date && (
+                          <span className="hidden sm:inline">
+                            Encerra: {new Date(raffle.end_date).toLocaleDateString("pt-BR")}
+                          </span>
+                        )}
                       </div>
                       {raffle.status === "published" && (
                         <div className="mt-2 w-full max-w-xs">
                           <div className="h-1.5 sm:h-2 bg-muted rounded-full overflow-hidden">
                             <div
                               className="h-full gradient-primary transition-all duration-500"
-                              style={{ width: `${(raffle.sold / raffle.total) * 100}%` }}
+                              style={{ width: `${(raffle.numbers_sold / raffle.total_numbers) * 100}%` }}
                             />
                           </div>
                         </div>
@@ -194,20 +266,62 @@ const MinhasRifas = () => {
 
                     {/* Actions */}
                     <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
-                      <Button variant="outline" size="sm" className="flex-1 sm:flex-none h-8 sm:h-9 px-2 sm:px-3">
-                        <Eye size={14} className="sm:hidden" />
-                        <Eye size={16} className="hidden sm:block" />
-                        <span className="ml-1 text-xs sm:text-sm sm:hidden lg:inline">Ver</span>
-                      </Button>
-                      <Button variant="outline" size="sm" className="flex-1 sm:flex-none h-8 sm:h-9 px-2 sm:px-3">
-                        <Edit size={14} className="sm:hidden" />
-                        <Edit size={16} className="hidden sm:block" />
-                        <span className="ml-1 text-xs sm:text-sm sm:hidden lg:inline">Editar</span>
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-8 w-8 sm:h-9 sm:w-9">
-                        <Trash2 size={14} className="sm:hidden" />
-                        <Trash2 size={18} className="hidden sm:block" />
-                      </Button>
+                      {raffle.status === "published" && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyLink(raffle.id)}
+                            className="flex-1 sm:flex-none h-8 sm:h-9 px-2 sm:px-3"
+                          >
+                            <Copy size={14} className="sm:hidden" />
+                            <Copy size={16} className="hidden sm:block" />
+                            <span className="ml-1 text-xs sm:text-sm">Copiar link</span>
+                          </Button>
+                          <Link to={`/rifa/${raffle.id}`} target="_blank">
+                            <Button variant="outline" size="sm" className="h-8 sm:h-9 px-2 sm:px-3">
+                              <ExternalLink size={14} className="sm:hidden" />
+                              <ExternalLink size={16} className="hidden sm:block" />
+                            </Button>
+                          </Link>
+                        </>
+                      )}
+                      {raffle.status === "pending_payment" && (
+                        <Link to="/pagamento-taxa">
+                          <Button size="sm" className="h-8 sm:h-9 px-2 sm:px-3">
+                            Pagar taxa
+                          </Button>
+                        </Link>
+                      )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:bg-destructive/10 h-8 w-8 sm:h-9 sm:w-9"
+                          >
+                            <Trash2 size={14} className="sm:hidden" />
+                            <Trash2 size={18} className="hidden sm:block" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir rifa?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta ação não pode ser desfeita. A rifa "{raffle.name}" será permanentemente removida.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(raffle.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 </CardContent>

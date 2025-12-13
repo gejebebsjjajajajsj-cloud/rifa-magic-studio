@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   FileText,
   Hash,
@@ -17,6 +19,7 @@ import {
   Check,
   Upload,
   Palette,
+  Loader2,
 } from "lucide-react";
 
 const steps = [
@@ -48,10 +51,12 @@ const colors = [
 const CriarRifa = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  // Form state
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -63,6 +68,8 @@ const CriarRifa = () => {
     buttonColor: "#EC4899",
     pixKey: "",
     pixKeyType: "cpf",
+    imageUrl: "",
+    bannerUrl: "",
   });
 
   const updateFormData = (key: string, value: string | number) => {
@@ -70,6 +77,16 @@ const CriarRifa = () => {
   };
 
   const nextStep = () => {
+    if (currentStep === 1) {
+      if (!formData.name || !formData.description || !formData.category || !formData.endDate) {
+        toast({
+          title: "Preencha todos os campos",
+          description: "Nome, descrição, categoria e data são obrigatórios",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     if (currentStep < 5) setCurrentStep(currentStep + 1);
   };
 
@@ -77,16 +94,87 @@ const CriarRifa = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const handlePublish = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "banner") => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    const isImage = type === "image";
+    if (isImage) setUploadingImage(true);
+    else setUploadingBanner(true);
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${user.id}/${Date.now()}-${type}.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from("raffle-images")
+      .upload(fileName, file);
+
+    if (error) {
       toast({
-        title: "Rifa criada!",
-        description: "Redirecionando para pagamento...",
+        title: "Erro no upload",
+        description: "Não foi possível enviar a imagem",
+        variant: "destructive",
       });
-      navigate("/pagamento-taxa");
-    }, 1000);
+      if (isImage) setUploadingImage(false);
+      else setUploadingBanner(false);
+      return;
+    }
+
+    const { data: publicUrl } = supabase.storage
+      .from("raffle-images")
+      .getPublicUrl(data.path);
+
+    if (isImage) {
+      updateFormData("imageUrl", publicUrl.publicUrl);
+      setUploadingImage(false);
+    } else {
+      updateFormData("bannerUrl", publicUrl.publicUrl);
+      setUploadingBanner(false);
+    }
+
+    toast({
+      title: "Imagem enviada!",
+      description: "Upload realizado com sucesso",
+    });
+  };
+
+  const handlePublish = async () => {
+    if (!user) return;
+
+    setLoading(true);
+
+    const { data, error } = await supabase.from("raffles").insert({
+      user_id: user.id,
+      name: formData.name,
+      description: formData.description,
+      category: formData.category,
+      end_date: formData.endDate ? new Date(formData.endDate).toISOString() : null,
+      total_numbers: formData.totalNumbers,
+      price_per_number: formData.pricePerNumber,
+      primary_color: formData.primaryColor,
+      button_color: formData.buttonColor,
+      pix_key: formData.pixKey,
+      image_url: formData.imageUrl || null,
+      banner_url: formData.bannerUrl || null,
+      status: "pending_payment",
+    }).select().single();
+
+    if (error) {
+      toast({
+        title: "Erro ao criar rifa",
+        description: error.message,
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    toast({
+      title: "Rifa criada!",
+      description: "Redirecionando para pagamento...",
+    });
+    
+    navigate("/pagamento-taxa", { state: { raffleId: data.id } });
   };
 
   const renderStepContent = () => {
@@ -202,7 +290,7 @@ const CriarRifa = () => {
                   placeholder="Ou digite um valor personalizado"
                   value={formData.totalNumbers}
                   onChange={(e) =>
-                    updateFormData("totalNumbers", parseInt(e.target.value))
+                    updateFormData("totalNumbers", parseInt(e.target.value) || 100)
                   }
                   className="mt-2"
                 />
@@ -217,12 +305,11 @@ const CriarRifa = () => {
                   placeholder="10.00"
                   value={formData.pricePerNumber}
                   onChange={(e) =>
-                    updateFormData("pricePerNumber", parseFloat(e.target.value))
+                    updateFormData("pricePerNumber", parseFloat(e.target.value) || 10)
                   }
                 />
               </div>
 
-              {/* Preview Grid */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">
                   Preview dos Números
@@ -277,27 +364,55 @@ const CriarRifa = () => {
                 <label className="text-sm font-medium text-foreground">
                   Imagem Principal
                 </label>
-                <div className="border-2 border-dashed border-border rounded-2xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-                  <Upload size={32} className="mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Clique ou arraste uma imagem
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    PNG, JPG até 5MB
-                  </p>
-                </div>
+                <label className="block">
+                  <div className="border-2 border-dashed border-border rounded-2xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
+                    {uploadingImage ? (
+                      <Loader2 size={32} className="mx-auto text-primary animate-spin mb-2" />
+                    ) : formData.imageUrl ? (
+                      <img src={formData.imageUrl} alt="Preview" className="w-32 h-32 object-cover rounded-xl mx-auto mb-2" />
+                    ) : (
+                      <Upload size={32} className="mx-auto text-muted-foreground mb-2" />
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      {formData.imageUrl ? "Clique para alterar" : "Clique ou arraste uma imagem"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      PNG, JPG até 5MB
+                    </p>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleImageUpload(e, "image")}
+                  />
+                </label>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">
                   Banner (opcional)
                 </label>
-                <div className="border-2 border-dashed border-border rounded-2xl p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
-                  <Upload size={24} className="mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Adicionar banner
-                  </p>
-                </div>
+                <label className="block">
+                  <div className="border-2 border-dashed border-border rounded-2xl p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
+                    {uploadingBanner ? (
+                      <Loader2 size={24} className="mx-auto text-primary animate-spin mb-2" />
+                    ) : formData.bannerUrl ? (
+                      <img src={formData.bannerUrl} alt="Banner preview" className="w-full h-24 object-cover rounded-xl mb-2" />
+                    ) : (
+                      <Upload size={24} className="mx-auto text-muted-foreground mb-2" />
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      {formData.bannerUrl ? "Clique para alterar" : "Adicionar banner"}
+                    </p>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleImageUpload(e, "banner")}
+                  />
+                </label>
               </div>
 
               <div className="space-y-2">
@@ -446,6 +561,11 @@ const CriarRifa = () => {
 
             <Card>
               <CardContent className="p-6 space-y-4">
+                {formData.imageUrl && (
+                  <div className="flex justify-center mb-4">
+                    <img src={formData.imageUrl} alt="Rifa" className="w-32 h-32 object-cover rounded-xl" />
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">Nome</p>
@@ -474,7 +594,7 @@ const CriarRifa = () => {
                   <div>
                     <p className="text-sm text-muted-foreground">Término</p>
                     <p className="font-semibold text-foreground">
-                      {formData.endDate || "Não informado"}
+                      {formData.endDate ? new Date(formData.endDate).toLocaleDateString("pt-BR") : "Não informado"}
                     </p>
                   </div>
                   <div>
@@ -489,6 +609,13 @@ const CriarRifa = () => {
                   <p className="text-sm text-muted-foreground">Descrição</p>
                   <p className="text-foreground">
                     {formData.description || "Não informado"}
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t border-border">
+                  <p className="text-sm text-muted-foreground">Chave Pix</p>
+                  <p className="text-foreground">
+                    {formData.pixKey || "Não informado"}
                   </p>
                 </div>
               </CardContent>
@@ -515,7 +642,6 @@ const CriarRifa = () => {
         {/* Progress Steps */}
         <div className="mb-4 sm:mb-6 lg:mb-8">
           <div className="flex items-center justify-between relative">
-            {/* Progress Line */}
             <div className="absolute top-4 sm:top-5 left-0 right-0 h-0.5 sm:h-1 bg-muted rounded-full -z-10">
               <div
                 className="h-full gradient-primary rounded-full transition-all duration-500"
@@ -581,14 +707,20 @@ const CriarRifa = () => {
 
           {currentStep < 5 ? (
             <Button onClick={nextStep} size="sm" className="sm:size-default">
-              <span className="hidden sm:inline">Próximo</span>
-              <span className="sm:hidden">Próximo</span>
+              <span>Próximo</span>
               <ArrowRight size={16} className="sm:hidden" />
               <ArrowRight size={18} className="hidden sm:block" />
             </Button>
           ) : (
             <Button onClick={handlePublish} disabled={loading} size="sm" className="sm:size-default text-xs sm:text-sm">
-              {loading ? "Processando..." : "Publicar e pagar"}
+              {loading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                "Publicar e pagar"
+              )}
             </Button>
           )}
         </div>

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,44 +12,102 @@ import {
   Sparkles,
   ArrowRight
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Raffle {
+  id: string;
+  name: string;
+  status: string;
+  numbers_sold: number;
+  total_numbers: number;
+  total_earned: number;
+}
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const [raffles, setRaffles] = useState<Raffle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user) return;
+
+      // Get user name from profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (profile?.name) {
+        setUserName(profile.name);
+      } else if (user.user_metadata?.name) {
+        setUserName(user.user_metadata.name);
+      } else {
+        setUserName(user.email?.split("@")[0] || "");
+      }
+
+      // Get raffles
+      const { data: rafflesData } = await supabase
+        .from("raffles")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (rafflesData) {
+        setRaffles(rafflesData);
+      }
+
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [user]);
+
+  const totalRaffles = raffles.length;
+  const publishedRaffles = raffles.filter(r => r.status === "published").length;
+  const pendingRaffles = raffles.filter(r => r.status === "draft" || r.status === "pending_payment").length;
+  const totalEarned = raffles.reduce((sum, r) => sum + Number(r.total_earned || 0), 0);
+
   const stats = [
     { 
       icon: Ticket, 
       label: "Total de Rifas", 
-      value: "24", 
+      value: totalRaffles.toString(), 
       color: "gradient-primary",
       iconColor: "text-primary-foreground"
     },
     { 
       icon: Check, 
       label: "Rifas Publicadas", 
-      value: "18", 
+      value: publishedRaffles.toString(), 
       color: "bg-mint",
       iconColor: "text-foreground"
     },
     { 
       icon: Clock, 
       label: "Pendentes", 
-      value: "6", 
+      value: pendingRaffles.toString(), 
       color: "bg-lavender",
       iconColor: "text-foreground"
     },
     { 
       icon: TrendingUp, 
-      label: "Faturamento Hoje", 
-      value: "R$ 4.300", 
+      label: "Faturamento Total", 
+      value: `R$ ${totalEarned.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, 
       color: "bg-peach",
       iconColor: "text-foreground"
     },
   ];
 
-  const recentRaffles = [
-    { id: 1, name: "Rifa do iPhone 15 Pro Max", status: "published", sold: 97, total: 100 },
-    { id: 2, name: "Kit Maquiagem Importada", status: "published", sold: 48, total: 50 },
-    { id: 3, name: "Vale Compras R$1.000", status: "published", sold: 100, total: 100 },
-  ];
+  const recentRaffles = raffles.slice(0, 3);
+
+  const getFirstName = () => {
+    if (!userName) return "";
+    return userName.split(" ")[0];
+  };
 
   return (
     <DashboardLayout>
@@ -56,10 +115,12 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <div className="animate-fade-in">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-1">
-            Olá, Criadora! 👋
+            Olá{getFirstName() ? `, ${getFirstName()}` : ""}! 👋
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Aqui está um resumo das suas rifas
+            {totalRaffles > 0 
+              ? "Aqui está um resumo das suas rifas"
+              : "Crie sua primeira rifa e comece a vender!"}
           </p>
         </div>
 
@@ -124,47 +185,67 @@ const Dashboard = () => {
             </Link>
           </div>
 
-          <div className="space-y-2 sm:space-y-3">
-            {recentRaffles.map((raffle, index) => (
-              <Card 
-                key={raffle.id} 
-                className="animate-fade-in"
-                style={{ animationDelay: `${(index + 4) * 0.1}s` }}
-              >
-                <CardContent className="p-3 sm:p-4 flex items-center justify-between gap-2 sm:gap-4">
-                  <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-                    <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      raffle.status === "published" ? "bg-mint" : "bg-lavender"
+          {loading ? (
+            <Card>
+              <CardContent className="p-4 sm:p-6 text-center text-muted-foreground">
+                Carregando...
+              </CardContent>
+            </Card>
+          ) : recentRaffles.length === 0 ? (
+            <Card>
+              <CardContent className="p-4 sm:p-6 text-center text-muted-foreground">
+                Você ainda não criou nenhuma rifa. Que tal criar a primeira?
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2 sm:space-y-3">
+              {recentRaffles.map((raffle, index) => (
+                <Card 
+                  key={raffle.id} 
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${(index + 4) * 0.1}s` }}
+                >
+                  <CardContent className="p-3 sm:p-4 flex items-center justify-between gap-2 sm:gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+                      <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        raffle.status === "published" ? "bg-mint" : "bg-lavender"
+                      }`}>
+                        {raffle.status === "published" ? (
+                          <Check size={18} className="text-foreground sm:hidden" />
+                        ) : (
+                          <Clock size={18} className="text-foreground sm:hidden" />
+                        )}
+                        {raffle.status === "published" ? (
+                          <Check size={22} className="text-foreground hidden sm:block" />
+                        ) : (
+                          <Clock size={22} className="text-foreground hidden sm:block" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-semibold text-foreground text-sm sm:text-base truncate">{raffle.name}</h4>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                          {raffle.numbers_sold}/{raffle.total_numbers} vendidos
+                        </p>
+                      </div>
+                    </div>
+                    <div className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium flex-shrink-0 ${
+                      raffle.status === "published" 
+                        ? "bg-mint text-foreground" 
+                        : raffle.status === "pending_payment"
+                        ? "bg-peach text-foreground"
+                        : "bg-lavender text-foreground"
                     }`}>
-                      {raffle.status === "published" ? (
-                        <Check size={18} className="text-foreground sm:hidden" />
-                      ) : (
-                        <Clock size={18} className="text-foreground sm:hidden" />
-                      )}
-                      {raffle.status === "published" ? (
-                        <Check size={22} className="text-foreground hidden sm:block" />
-                      ) : (
-                        <Clock size={22} className="text-foreground hidden sm:block" />
-                      )}
+                      {raffle.status === "published" 
+                        ? "Publicada" 
+                        : raffle.status === "pending_payment"
+                        ? "Aguardando pagamento"
+                        : "Rascunho"}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-semibold text-foreground text-sm sm:text-base truncate">{raffle.name}</h4>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
-                        {raffle.sold}/{raffle.total} vendidos
-                      </p>
-                    </div>
-                  </div>
-                  <div className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium flex-shrink-0 ${
-                    raffle.status === "published" 
-                      ? "bg-mint text-foreground" 
-                      : "bg-lavender text-foreground"
-                  }`}>
-                    {raffle.status === "published" ? "Publicada" : "Pendente"}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Tips Section */}

@@ -112,6 +112,18 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <span>{item.label}</span>
               </Link>
             ))}
+
+            {/* Pré-visualização do site do cliente */}
+            <a
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 font-medium text-muted-foreground hover:bg-muted hover:text-foreground mt-2"
+            >
+              <LayoutDashboard size={20} />
+              <span>Pré-visualizar site do cliente</span>
+            </a>
           </nav>
 
           {/* Logout Button */}

@@ -104,17 +104,18 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen pb-20 lg:pb-0">
+      <div className="flex-1 flex flex-col min-h-screen pb-16 sm:pb-20 lg:pb-0">
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-lg border-b-2 border-border/50 px-4 py-4 lg:px-8">
-          <div className="flex items-center justify-between">
+        <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-lg border-b-2 border-border/50 px-3 sm:px-4 py-3 sm:py-4 lg:px-8">
+          <div className="flex items-center justify-between gap-2">
             <Button 
               variant="ghost" 
               size="icon" 
-              className="lg:hidden"
+              className="lg:hidden h-9 w-9 sm:h-10 sm:w-10"
               onClick={() => setSidebarOpen(true)}
             >
-              <Menu size={24} />
+              <Menu size={20} className="sm:hidden" />
+              <Menu size={24} className="hidden sm:block" />
             </Button>
             <div className="lg:hidden">
               <Logo size="sm" />
@@ -125,7 +126,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               </h2>
             </div>
             <div className="flex items-center gap-2">
-              <div className="h-10 w-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold">
+              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm sm:text-base">
                 U
               </div>
             </div>
@@ -133,27 +134,27 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-8">
+        <main className="flex-1 p-3 sm:p-4 lg:p-8">
           {children}
         </main>
       </div>
 
       {/* Bottom Navigation (Mobile) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t-2 border-border/50 z-40 lg:hidden">
-        <div className="flex items-center justify-around py-2">
+      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t-2 border-border/50 z-40 lg:hidden safe-area-bottom">
+        <div className="flex items-center justify-around py-1.5 sm:py-2 px-1">
           {bottomNavItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
               className={cn(
-                "flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-all duration-200",
+                "flex flex-col items-center gap-0.5 py-1.5 px-2 sm:px-3 rounded-lg sm:rounded-xl transition-all duration-200 min-w-0",
                 isActive(item.path)
                   ? "text-primary"
                   : "text-muted-foreground"
               )}
             >
-              <item.icon size={22} className={isActive(item.path) ? "animate-bounce-soft" : ""} />
-              <span className="text-xs font-medium">{item.label}</span>
+              <item.icon size={20} className={isActive(item.path) ? "animate-bounce-soft" : ""} />
+              <span className="text-[10px] sm:text-xs font-medium truncate">{item.label}</span>
             </Link>
           ))}
         </div>

@@ -44,6 +44,56 @@ export type Database = {
         }
         Relationships: []
       }
+      raffle_purchases: {
+        Row: {
+          buyer_email: string
+          buyer_name: string
+          buyer_phone: string | null
+          created_at: string
+          id: string
+          numbers_purchased: number[]
+          payment_status: string
+          quantity: number
+          raffle_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          buyer_email: string
+          buyer_name: string
+          buyer_phone?: string | null
+          created_at?: string
+          id?: string
+          numbers_purchased: number[]
+          payment_status?: string
+          quantity: number
+          raffle_id: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          buyer_email?: string
+          buyer_name?: string
+          buyer_phone?: string | null
+          created_at?: string
+          id?: string
+          numbers_purchased?: number[]
+          payment_status?: string
+          quantity?: number
+          raffle_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raffle_purchases_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       raffles: {
         Row: {
           banner_url: string | null

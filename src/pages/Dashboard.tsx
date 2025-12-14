@@ -10,8 +10,7 @@ import {
   TrendingUp, 
   PlusCircle,
   Sparkles,
-  ArrowRight,
-  Star
+  ArrowRight
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,16 +23,6 @@ interface Raffle {
   total_numbers: number;
   total_earned: number;
 }
-
-// Mock recent sales data
-const mockRecentSales = [
-  { name: "Carlos Silva", amount: 29.90 },
-  { name: "Fernanda Lima", amount: 149.90 },
-  { name: "Mateus Oliveira", amount: 9.90 },
-  { name: "Ana Paula", amount: 300.00 },
-  { name: "João Pedro", amount: 59.90 },
-  { name: "Maria Santos", amount: 19.90 },
-];
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -149,39 +138,6 @@ const Dashboard = () => {
             </Card>
           ))}
         </div>
-
-        {/* Sales Card */}
-        <Card className="bg-gradient-to-br from-green-500 to-emerald-600 border-0 text-white">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-xs text-white/80">Vendas este mês</p>
-                <p className="text-2xl sm:text-3xl font-bold">R$ 9.847,90</p>
-              </div>
-              <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center">
-                <TrendingUp size={20} />
-              </div>
-            </div>
-            
-            {/* Recent Sales List */}
-            <div className="space-y-2 mt-4">
-              <p className="text-xs text-white/70 font-medium">Vendas recentes</p>
-              <div className="space-y-1.5">
-                {mockRecentSales.map((sale, index) => (
-                  <div key={index} className="flex items-center justify-between bg-white/10 rounded-lg px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <Star size={12} className="text-yellow-300" />
-                      <span className="text-xs font-medium">{sale.name}</span>
-                    </div>
-                    <span className="text-xs font-bold">
-                      R$ {sale.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* CTA Button */}
         <Link to="/criar-rifa" className="block">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +19,8 @@ import {
   Check,
   X,
   Star,
+  Copy,
+  Loader2,
 } from "lucide-react";
 import {
   Sheet,
@@ -33,6 +35,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { QRCodeSVG } from "qrcode.react";
 
 interface Raffle {
   id: string;
@@ -62,6 +65,8 @@ interface PrizeNumber {
   numbers: number[];
 }
 
+type CheckoutStep = "form" | "payment" | "success";
+
 const quickOptions = [
   { quantity: 10, label: "+10" },
   { quantity: 25, label: "+25", popular: true },
@@ -86,6 +91,13 @@ const RifaPublica = () => {
   const [showMorePremium, setShowMorePremium] = useState(false);
   const [prizeNumbers, setPrizeNumbers] = useState<PrizeNumber[]>([]);
   const [hasPaymentMethod, setHasPaymentMethod] = useState(false);
+
+  // Checkout state
+  const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>("form");
+  const [pixCode, setPixCode] = useState("");
+  const [qrCodeImage, setQrCodeImage] = useState("");
+  const [currentPurchaseId, setCurrentPurchaseId] = useState("");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const fetchRaffle = async () => {
@@ -227,18 +239,19 @@ const RifaPublica = () => {
     const selectedNumbers = shuffled.slice(0, quantity);
     const totalAmount = quantity * raffle.price_per_number;
 
-    const { error } = await supabase.from("raffle_purchases").insert({
+    // Create purchase record
+    const { data: purchaseData, error } = await supabase.from("raffle_purchases").insert({
       raffle_id: raffle.id,
       buyer_name: buyerName,
-      buyer_email: buyerEmail,
+      buyer_email: buyerEmail.toLowerCase().trim(),
       buyer_phone: buyerPhone,
       numbers_purchased: selectedNumbers,
       quantity,
       total_amount: totalAmount,
       payment_status: "pending",
-    });
+    }).select().single();
 
-    if (error) {
+    if (error || !purchaseData) {
       toast({
         title: "Erro ao reservar números",
         description: "Tente novamente",
@@ -248,17 +261,55 @@ const RifaPublica = () => {
       return;
     }
 
-    toast({
-      title: "Números reservados!",
-      description: `Seus números: ${selectedNumbers.slice(0, 5).join(", ")}${selectedNumbers.length > 5 ? "..." : ""}`,
-    });
+    setCurrentPurchaseId(purchaseData.id);
 
+    // Generate real payment
+    try {
+      const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
+        "create-raffle-payment",
+        { body: { purchase_id: purchaseData.id } }
+      );
+
+      if (paymentError) throw paymentError;
+
+      if (paymentData?.success && paymentData?.payment) {
+        setPixCode(paymentData.payment.pix_code || "");
+        setQrCodeImage(paymentData.payment.qr_code || "");
+        setCheckoutStep("payment");
+      } else {
+        throw new Error(paymentData?.error || "Erro ao gerar pagamento");
+      }
+    } catch (err: any) {
+      console.error("Payment error:", err);
+      toast({
+        title: "Erro ao gerar pagamento",
+        description: err.message || "Tente novamente",
+        variant: "destructive",
+      });
+      // Delete the pending purchase
+      await supabase.from("raffle_purchases").delete().eq("id", purchaseData.id);
+    }
+
+    setPurchasing(false);
+  };
+
+  const handleCopyPix = () => {
+    navigator.clipboard.writeText(pixCode);
+    setCopied(true);
+    toast({ title: "Código copiado!", description: "Cole no seu app de banco" });
+    setTimeout(() => setCopied(false), 3000);
+  };
+
+  const handleCloseDialog = () => {
     setShowPurchaseDialog(false);
+    setCheckoutStep("form");
+    setPixCode("");
+    setQrCodeImage("");
+    setCurrentPurchaseId("");
     setBuyerName("");
     setBuyerEmail("");
     setBuyerPhone("");
     setQuantity(25);
-    setPurchasing(false);
   };
 
   const primaryColor = raffle?.primary_color || "#10B981";
@@ -291,8 +342,6 @@ const RifaPublica = () => {
     }
     return items;
   });
-
-  const totalPrizes = prizeNumbers.reduce((acc, pn) => acc + pn.quantity, 0);
 
   if (loading) {
     return (
@@ -332,9 +381,11 @@ const RifaPublica = () => {
               <Button variant="ghost" className="w-full justify-start text-white hover:bg-zinc-800 text-sm h-8">
                 Início
               </Button>
-              <Button variant="ghost" className="w-full justify-start text-white hover:bg-zinc-800 text-sm h-8">
-                Meus títulos
-              </Button>
+              <Link to="/meus-numeros">
+                <Button variant="ghost" className="w-full justify-start text-white hover:bg-zinc-800 text-sm h-8">
+                  Meus títulos
+                </Button>
+              </Link>
             </nav>
           </SheetContent>
         </Sheet>
@@ -619,60 +670,127 @@ const RifaPublica = () => {
       </div>
 
       {/* Purchase Dialog */}
-      <Dialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
+      <Dialog open={showPurchaseDialog} onOpenChange={handleCloseDialog}>
         <DialogContent className="max-w-sm bg-zinc-900 border-zinc-800 text-white mx-3">
           <DialogHeader>
-            <DialogTitle className="text-white text-base">Finalizar compra</DialogTitle>
+            <DialogTitle className="text-white text-base">
+              {checkoutStep === "form" && "Finalizar compra"}
+              {checkoutStep === "payment" && "Pague via PIX"}
+              {checkoutStep === "success" && "Pagamento confirmado!"}
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 pt-2">
-            <div className="bg-zinc-800 rounded-lg p-3 text-center">
-              <p className="text-xs text-zinc-400">Você está adquirindo</p>
-              <p className="text-xl font-bold text-white">{quantity} títulos</p>
-              <p className="text-base font-bold" style={{ color: primaryColor }}>
-                R$ {totalAmount.toFixed(2).replace(".", ",")}
+
+          {checkoutStep === "form" && (
+            <div className="space-y-3 pt-2">
+              <div className="bg-zinc-800 rounded-lg p-3 text-center">
+                <p className="text-xs text-zinc-400">Você está adquirindo</p>
+                <p className="text-xl font-bold text-white">{quantity} títulos</p>
+                <p className="text-base font-bold" style={{ color: primaryColor }}>
+                  R$ {totalAmount.toFixed(2).replace(".", ",")}
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-zinc-300">Nome completo *</label>
+                  <Input
+                    placeholder="Seu nome"
+                    value={buyerName}
+                    onChange={(e) => setBuyerName(e.target.value)}
+                    className="h-9 text-sm bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-zinc-300">Email *</label>
+                  <Input
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={buyerEmail}
+                    onChange={(e) => setBuyerEmail(e.target.value)}
+                    className="h-9 text-sm bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-zinc-300">Telefone (opcional)</label>
+                  <Input
+                    placeholder="(00) 00000-0000"
+                    value={buyerPhone}
+                    onChange={(e) => setBuyerPhone(e.target.value)}
+                    className="h-9 text-sm bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                  />
+                </div>
+              </div>
+
+              <Button
+                onClick={handlePurchase}
+                disabled={purchasing}
+                className="w-full h-10 text-sm font-bold rounded-lg text-white"
+                style={{ backgroundColor: buttonColor }}
+              >
+                {purchasing ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin mr-2" />
+                    Gerando pagamento...
+                  </>
+                ) : (
+                  "Confirmar e pagar"
+                )}
+              </Button>
+            </div>
+          )}
+
+          {checkoutStep === "payment" && (
+            <div className="space-y-4 pt-2">
+              <div className="bg-zinc-800 rounded-lg p-3 text-center">
+                <p className="text-xs text-zinc-400 mb-1">Valor a pagar</p>
+                <p className="text-2xl font-bold" style={{ color: primaryColor }}>
+                  R$ {totalAmount.toFixed(2).replace(".", ",")}
+                </p>
+              </div>
+
+              {/* QR Code */}
+              <div className="border-2 border-dashed border-zinc-700 rounded-lg p-4 text-center">
+                {qrCodeImage ? (
+                  <img src={qrCodeImage} alt="QR Code PIX" className="w-40 h-40 mx-auto rounded" />
+                ) : pixCode ? (
+                  <QRCodeSVG value={pixCode} size={160} level="M" className="mx-auto" />
+                ) : (
+                  <div className="w-40 h-40 mx-auto bg-zinc-800 rounded flex items-center justify-center">
+                    <Loader2 className="animate-spin text-zinc-500" />
+                  </div>
+                )}
+                <p className="text-[10px] text-zinc-500 mt-2">
+                  Escaneie o QR Code com o app do seu banco
+                </p>
+              </div>
+
+              {/* PIX Code Copy */}
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-medium text-zinc-400">Ou copie o código PIX:</p>
+                <div className="flex gap-2">
+                  <div className="flex-1 bg-zinc-800 rounded-md p-2 text-[10px] text-zinc-400 font-mono truncate overflow-hidden">
+                    {pixCode}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleCopyPix}
+                    className="flex-shrink-0 h-8 w-8 bg-zinc-800 border-zinc-700"
+                  >
+                    {copied ? <Check size={14} /> : <Copy size={14} />}
+                  </Button>
+                </div>
+              </div>
+
+              <p className="text-[10px] text-zinc-500 text-center">
+                Após o pagamento, seus números serão confirmados automaticamente.
+                <br />
+                <Link to="/meus-numeros" className="text-emerald-400 underline">
+                  Consulte seus números aqui
+                </Link>
               </p>
             </div>
-            
-            <div className="space-y-2">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-zinc-300">Nome completo *</label>
-                <Input
-                  placeholder="Seu nome"
-                  value={buyerName}
-                  onChange={(e) => setBuyerName(e.target.value)}
-                  className="h-9 text-sm bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-zinc-300">Email *</label>
-                <Input
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={buyerEmail}
-                  onChange={(e) => setBuyerEmail(e.target.value)}
-                  className="h-9 text-sm bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-zinc-300">Telefone (opcional)</label>
-                <Input
-                  placeholder="(00) 00000-0000"
-                  value={buyerPhone}
-                  onChange={(e) => setBuyerPhone(e.target.value)}
-                  className="h-9 text-sm bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
-                />
-              </div>
-            </div>
-
-            <Button
-              onClick={handlePurchase}
-              disabled={purchasing}
-              className="w-full h-10 text-sm font-bold rounded-lg text-white"
-              style={{ backgroundColor: buttonColor }}
-            >
-              {purchasing ? "Processando..." : "Confirmar e pagar"}
-            </Button>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

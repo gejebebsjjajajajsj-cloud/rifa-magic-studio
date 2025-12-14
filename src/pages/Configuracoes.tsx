@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { MercadoPagoModal } from "@/components/MercadoPagoModal";
 import { 
   User, 
   Mail, 
@@ -24,10 +25,9 @@ import { Switch } from "@/components/ui/switch";
 
 const Configuracoes = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [showMercadoPagoToken, setShowMercadoPagoToken] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
-  const [testingConnection, setTestingConnection] = useState(false);
+  const [mercadoPagoModalOpen, setMercadoPagoModalOpen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const { toast } = useToast();
   const { user } = useAuth();
@@ -45,7 +45,6 @@ const Configuracoes = () => {
     marketing: false,
   });
 
-  // Load profile data
   useEffect(() => {
     const loadProfile = async () => {
       if (!user) return;
@@ -90,53 +89,6 @@ const Configuracoes = () => {
     loadProfile();
   }, [user]);
 
-  const handleTestConnection = async () => {
-    if (!profile.mercadoPagoToken) {
-      toast({
-        title: "Token não informado",
-        description: "Por favor, insira seu Access Token do Mercado Pago.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setTestingConnection(true);
-    setConnectionStatus('idle');
-
-    try {
-      // Test the token by making a simple API call to Mercado Pago
-      const response = await fetch('https://api.mercadopago.com/v1/payment_methods', {
-        headers: {
-          'Authorization': `Bearer ${profile.mercadoPagoToken}`,
-        },
-      });
-
-      if (response.ok) {
-        setConnectionStatus('success');
-        toast({
-          title: "Conexão estabelecida!",
-          description: "Seu token do Mercado Pago está funcionando corretamente.",
-        });
-      } else {
-        setConnectionStatus('error');
-        toast({
-          title: "Token inválido",
-          description: "Verifique se o Access Token está correto.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      setConnectionStatus('error');
-      toast({
-        title: "Erro na conexão",
-        description: "Não foi possível testar a conexão. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setTestingConnection(false);
-    }
-  };
-
   const handleSaveProfile = async () => {
     if (!user) return;
     
@@ -160,13 +112,13 @@ const Configuracoes = () => {
 
       toast({
         title: "Perfil atualizado!",
-        description: "Suas informações foram salvas com sucesso.",
+        description: "Suas informações foram salvas.",
       });
     } catch (error) {
       console.error('Error saving profile:', error);
       toast({
         title: "Erro ao salvar",
-        description: "Não foi possível salvar suas informações.",
+        description: "Não foi possível salvar.",
         variant: "destructive",
       });
     } finally {
@@ -174,11 +126,35 @@ const Configuracoes = () => {
     }
   };
 
+  const handleSaveMercadoPagoToken = async (token: string) => {
+    if (!user) return;
+    
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({
+        user_id: user.id,
+        mercado_pago_access_token: token,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (error) throw error;
+
+    setProfile({ ...profile, mercadoPagoToken: token });
+    setConnectionStatus(token ? 'success' : 'idle');
+    
+    toast({
+      title: "Token salvo!",
+      description: "Mercado Pago conectado com sucesso.",
+    });
+  };
+
   if (loadingProfile) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex items-center justify-center min-h-[200px]">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       </DashboardLayout>
     );
@@ -186,247 +162,180 @@ const Configuracoes = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-2xl">
+      <div className="space-y-4 max-w-lg">
         {/* Header */}
-        <div className="animate-fade-in">
-          <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
-          <p className="text-muted-foreground">Gerencie sua conta e preferências</p>
+        <div>
+          <h1 className="text-lg font-bold text-foreground">Configurações</h1>
+          <p className="text-xs text-muted-foreground">Gerencie sua conta</p>
         </div>
 
         {/* Profile Section */}
-        <Card className="animate-fade-in stagger-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User size={20} />
+        <Card>
+          <CardHeader className="py-3 px-4">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <User size={16} />
               Perfil
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="h-20 w-20 gradient-primary rounded-2xl flex items-center justify-center text-3xl font-bold text-primary-foreground">
+          <CardContent className="px-4 pb-4 pt-0 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 gradient-primary rounded-xl flex items-center justify-center text-lg font-bold text-primary-foreground">
                 {profile.name.charAt(0) || "?"}
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">{profile.name || "Seu nome"}</h3>
-                <p className="text-sm text-muted-foreground">{profile.email}</p>
+                <h3 className="font-medium text-sm text-foreground">{profile.name || "Seu nome"}</h3>
+                <p className="text-xs text-muted-foreground">{profile.email}</p>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Nome completo</label>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Nome completo</label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
                   <Input
                     value={profile.name}
                     onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                    className="pl-12"
+                    className="pl-9 h-9 text-sm"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Email</label>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
                   <Input
                     type="email"
                     value={profile.email}
                     onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                    className="pl-12"
+                    className="pl-9 h-9 text-sm"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">WhatsApp de Suporte</label>
-                <p className="text-xs text-muted-foreground">Número que aparecerá no botão de suporte das suas rifas</p>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-foreground">WhatsApp de Suporte</label>
                 <div className="relative">
-                  <MessageCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                  <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
                   <Input
                     type="tel"
                     placeholder="(11) 99999-9999"
                     value={profile.supportPhone}
                     onChange={(e) => setProfile({ ...profile, supportPhone: e.target.value })}
-                    className="pl-12"
+                    className="pl-9 h-9 text-sm"
                   />
                 </div>
               </div>
 
-              <Button onClick={handleSaveProfile} disabled={loading}>
-                <Save size={18} />
-                {loading ? "Salvando..." : "Salvar alterações"}
+              <Button onClick={handleSaveProfile} disabled={loading} size="sm" className="w-full">
+                <Save size={14} />
+                {loading ? "Salvando..." : "Salvar"}
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Mercado Pago Integration Section */}
-        <Card className="animate-fade-in stagger-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard size={20} />
-              Integração Mercado Pago
-              {connectionStatus === 'success' && (
-                <span className="flex items-center gap-1 text-sm font-normal text-green-600">
-                  <CheckCircle size={16} />
-                  Conectado
-                </span>
-              )}
-              {connectionStatus === 'error' && (
-                <span className="flex items-center gap-1 text-sm font-normal text-destructive">
-                  <AlertCircle size={16} />
-                  Erro na conexão
-                </span>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-4 bg-muted/30 rounded-xl space-y-4">
-              <div>
-                <p className="font-medium text-foreground mb-1">Access Token</p>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Para receber pagamentos, conecte sua conta do Mercado Pago inserindo seu Access Token.
-                  <a 
-                    href="https://www.mercadopago.com.br/developers/panel/app" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline ml-1"
-                  >
-                    Obter meu token →
-                  </a>
-                </p>
-                <div className="relative">
-                  <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                  <Input
-                    type={showMercadoPagoToken ? "text" : "password"}
-                    placeholder="APP_USR-xxxxxxxxxxxxxxxxx"
-                    value={profile.mercadoPagoToken}
-                    onChange={(e) => {
-                      setProfile({ ...profile, mercadoPagoToken: e.target.value });
-                      setConnectionStatus('idle');
-                    }}
-                    className="pl-12 pr-12"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowMercadoPagoToken(!showMercadoPagoToken)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showMercadoPagoToken ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
+        {/* Mercado Pago Integration - Clean Button */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-[#00A1E4] rounded-xl flex items-center justify-center">
+                  <CreditCard className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm text-foreground">Mercado Pago</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {connectionStatus === 'success' ? (
+                      <span className="flex items-center gap-1 text-green-600">
+                        <CheckCircle size={12} /> Conectado
+                      </span>
+                    ) : (
+                      "Receba pagamentos"
+                    )}
+                  </p>
                 </div>
               </div>
-
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={handleTestConnection}
-                  disabled={testingConnection || !profile.mercadoPagoToken}
-                >
-                  {testingConnection ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" />
-                      Testando...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle size={18} />
-                      Testar Conexão
-                    </>
-                  )}
-                </Button>
-                <Button onClick={handleSaveProfile} disabled={loading}>
-                  <Save size={18} />
-                  Salvar Token
-                </Button>
-              </div>
-            </div>
-
-            <div className="text-xs text-muted-foreground bg-accent/20 p-3 rounded-lg">
-              <p className="font-medium mb-1">💡 Como obter seu Access Token:</p>
-              <ol className="list-decimal list-inside space-y-1">
-                <li>Acesse o <a href="https://www.mercadopago.com.br/developers/panel" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Painel de Desenvolvedores</a></li>
-                <li>Crie uma nova aplicação ou selecione uma existente</li>
-                <li>Vá em "Credenciais de produção"</li>
-                <li>Copie o "Access Token" e cole aqui</li>
-              </ol>
+              <Button 
+                variant={connectionStatus === 'success' ? "outline" : "default"}
+                size="sm"
+                onClick={() => setMercadoPagoModalOpen(true)}
+              >
+                {connectionStatus === 'success' ? "Gerenciar" : "Conectar"}
+              </Button>
             </div>
           </CardContent>
         </Card>
 
+        <MercadoPagoModal
+          open={mercadoPagoModalOpen}
+          onOpenChange={setMercadoPagoModalOpen}
+          currentToken={profile.mercadoPagoToken}
+          onSave={handleSaveMercadoPagoToken}
+          connectionStatus={connectionStatus}
+        />
+
         {/* Password Section */}
-        <Card className="animate-fade-in stagger-3">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock size={20} />
+        <Card>
+          <CardHeader className="py-3 px-4">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Lock size={16} />
               Alterar Senha
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Senha atual</label>
+          <CardContent className="px-4 pb-4 pt-0 space-y-3">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-foreground">Senha atual</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
                 <Input
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pl-12 pr-12"
+                  className="pl-9 pr-9 h-9 text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Nova senha</label>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-foreground">Nova senha</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
                 <Input
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pl-12"
+                  className="pl-9 h-9 text-sm"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Confirmar nova senha</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="pl-12"
-                />
-              </div>
-            </div>
-
-            <Button variant="outline">
-              <Lock size={18} />
+            <Button variant="outline" size="sm" className="w-full">
+              <Lock size={14} />
               Alterar senha
             </Button>
           </CardContent>
         </Card>
 
         {/* Notifications Section */}
-        <Card className="animate-fade-in stagger-4">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell size={20} />
+        <Card>
+          <CardHeader className="py-3 px-4">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Bell size={16} />
               Notificações
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
+          <CardContent className="px-4 pb-4 pt-0 space-y-2">
+            <div className="flex items-center justify-between py-2">
               <div>
-                <p className="font-medium text-foreground">Notificações por email</p>
-                <p className="text-sm text-muted-foreground">Receber atualizações por email</p>
+                <p className="text-sm font-medium text-foreground">Email</p>
+                <p className="text-xs text-muted-foreground">Receber atualizações</p>
               </div>
               <Switch
                 checked={notifications.email}
@@ -436,10 +345,10 @@ const Configuracoes = () => {
               />
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
+            <div className="flex items-center justify-between py-2">
               <div>
-                <p className="font-medium text-foreground">Alertas de vendas</p>
-                <p className="text-sm text-muted-foreground">Receber notificação a cada venda</p>
+                <p className="text-sm font-medium text-foreground">Vendas</p>
+                <p className="text-xs text-muted-foreground">Alertas de vendas</p>
               </div>
               <Switch
                 checked={notifications.sales}
@@ -449,10 +358,10 @@ const Configuracoes = () => {
               />
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl">
+            <div className="flex items-center justify-between py-2">
               <div>
-                <p className="font-medium text-foreground">Novidades e promoções</p>
-                <p className="text-sm text-muted-foreground">Receber dicas e novidades</p>
+                <p className="text-sm font-medium text-foreground">Novidades</p>
+                <p className="text-xs text-muted-foreground">Dicas e promoções</p>
               </div>
               <Switch
                 checked={notifications.marketing}

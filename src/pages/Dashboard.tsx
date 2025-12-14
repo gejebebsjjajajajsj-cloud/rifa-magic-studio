@@ -10,7 +10,8 @@ import {
   TrendingUp, 
   PlusCircle,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Star
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +25,16 @@ interface Raffle {
   total_earned: number;
 }
 
+// Mock recent sales data
+const mockRecentSales = [
+  { name: "Carlos Silva", amount: 29.90 },
+  { name: "Fernanda Lima", amount: 149.90 },
+  { name: "Mateus Oliveira", amount: 9.90 },
+  { name: "Ana Paula", amount: 300.00 },
+  { name: "João Pedro", amount: 59.90 },
+  { name: "Maria Santos", amount: 19.90 },
+];
+
 const Dashboard = () => {
   const { user } = useAuth();
   const [raffles, setRaffles] = useState<Raffle[]>([]);
@@ -34,7 +45,6 @@ const Dashboard = () => {
     const fetchData = async () => {
       if (!user) return;
 
-      // Get user name from profile
       const { data: profile } = await supabase
         .from("profiles")
         .select("name")
@@ -49,7 +59,6 @@ const Dashboard = () => {
         setUserName(user.email?.split("@")[0] || "");
       }
 
-      // Get raffles
       const { data: rafflesData } = await supabase
         .from("raffles")
         .select("*")
@@ -81,7 +90,7 @@ const Dashboard = () => {
     },
     { 
       icon: Check, 
-      label: "Rifas Publicadas", 
+      label: "Publicadas", 
       value: publishedRaffles.toString(), 
       color: "bg-mint",
       iconColor: "text-foreground"
@@ -95,7 +104,7 @@ const Dashboard = () => {
     },
     { 
       icon: TrendingUp, 
-      label: "Faturamento Total", 
+      label: "Faturamento", 
       value: `R$ ${totalEarned.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, 
       color: "bg-peach",
       iconColor: "text-foreground"
@@ -111,36 +120,29 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-        {/* Welcome Section */}
-        <div className="animate-fade-in">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-1">
+      <div className="space-y-4">
+        {/* Welcome */}
+        <div>
+          <h1 className="text-lg sm:text-xl font-bold text-foreground">
             Olá{getFirstName() ? `, ${getFirstName()}` : ""}! 👋
           </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            {totalRaffles > 0 
-              ? "Aqui está um resumo das suas rifas"
-              : "Crie sua primeira rifa e comece a vender!"}
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            {totalRaffles > 0 ? "Resumo das suas rifas" : "Crie sua primeira rifa!"}
           </p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
           {stats.map((stat, index) => (
-            <Card 
-              key={index} 
-              className="overflow-hidden animate-fade-in"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <CardContent className="p-3 sm:p-4 lg:p-6">
+            <Card key={index} className="overflow-hidden">
+              <CardContent className="p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm text-muted-foreground mb-0.5 sm:mb-1 truncate">{stat.label}</p>
-                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground truncate">{stat.value}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{stat.label}</p>
+                    <p className="text-sm sm:text-base font-bold text-foreground truncate">{stat.value}</p>
                   </div>
-                  <div className={`h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 ${stat.color} rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0`}>
-                    <stat.icon size={16} className={`${stat.iconColor} sm:hidden`} />
-                    <stat.icon size={20} className={`${stat.iconColor} hidden sm:block`} />
+                  <div className={`h-8 w-8 ${stat.color} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                    <stat.icon size={14} className={stat.iconColor} />
                   </div>
                 </div>
               </CardContent>
@@ -148,87 +150,108 @@ const Dashboard = () => {
           ))}
         </div>
 
+        {/* Sales Card */}
+        <Card className="bg-gradient-to-br from-green-500 to-emerald-600 border-0 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs text-white/80">Vendas este mês</p>
+                <p className="text-2xl sm:text-3xl font-bold">R$ 9.847,90</p>
+              </div>
+              <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <TrendingUp size={20} />
+              </div>
+            </div>
+            
+            {/* Recent Sales List */}
+            <div className="space-y-2 mt-4">
+              <p className="text-xs text-white/70 font-medium">Vendas recentes</p>
+              <div className="space-y-1.5">
+                {mockRecentSales.map((sale, index) => (
+                  <div key={index} className="flex items-center justify-between bg-white/10 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <Star size={12} className="text-yellow-300" />
+                      <span className="text-xs font-medium">{sale.name}</span>
+                    </div>
+                    <span className="text-xs font-bold">
+                      R$ {sale.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* CTA Button */}
         <Link to="/criar-rifa" className="block">
-          <Card className="gradient-primary border-0 shadow-glow hover:scale-[1.02] transition-all duration-300 cursor-pointer animate-fade-in">
-            <CardContent className="p-4 sm:p-6 lg:p-8 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 bg-primary-foreground/20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
-                  <PlusCircle size={20} className="text-primary-foreground sm:hidden" />
-                  <PlusCircle size={24} className="text-primary-foreground hidden sm:block lg:hidden" />
-                  <PlusCircle size={28} className="text-primary-foreground hidden lg:block" />
+          <Card className="gradient-primary border-0 shadow-glow hover:scale-[1.01] transition-all cursor-pointer">
+            <CardContent className="p-3 sm:p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-primary-foreground/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <PlusCircle size={18} className="text-primary-foreground" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-base sm:text-lg lg:text-xl font-bold text-primary-foreground mb-0.5 sm:mb-1">
+                  <h3 className="text-sm sm:text-base font-bold text-primary-foreground">
                     Criar nova rifa
                   </h3>
-                  <p className="text-xs sm:text-sm text-primary-foreground/80 truncate">
-                    Configure sua rifa em poucos minutos
+                  <p className="text-xs text-primary-foreground/80 truncate">
+                    Configure em poucos minutos
                   </p>
                 </div>
               </div>
-              <ArrowRight size={20} className="text-primary-foreground hidden sm:block flex-shrink-0" />
+              <ArrowRight size={18} className="text-primary-foreground flex-shrink-0" />
             </CardContent>
           </Card>
         </Link>
 
         {/* Recent Raffles */}
-        <div className="animate-fade-in stagger-3">
-          <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h2 className="text-base sm:text-lg lg:text-xl font-bold text-foreground">Rifas Recentes</h2>
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm sm:text-base font-bold text-foreground">Rifas Recentes</h2>
             <Link to="/rifas">
-              <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
+              <Button variant="ghost" size="sm" className="text-xs px-2 h-7">
                 Ver todas
-                <ArrowRight size={14} className="sm:hidden" />
-                <ArrowRight size={16} className="hidden sm:block" />
+                <ArrowRight size={12} />
               </Button>
             </Link>
           </div>
 
           {loading ? (
             <Card>
-              <CardContent className="p-4 sm:p-6 text-center text-muted-foreground">
+              <CardContent className="p-4 text-center text-sm text-muted-foreground">
                 Carregando...
               </CardContent>
             </Card>
           ) : recentRaffles.length === 0 ? (
             <Card>
-              <CardContent className="p-4 sm:p-6 text-center text-muted-foreground">
-                Você ainda não criou nenhuma rifa. Que tal criar a primeira?
+              <CardContent className="p-4 text-center text-sm text-muted-foreground">
+                Nenhuma rifa ainda. Crie a primeira!
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-2 sm:space-y-3">
-              {recentRaffles.map((raffle, index) => (
-                <Card 
-                  key={raffle.id} 
-                  className="animate-fade-in"
-                  style={{ animationDelay: `${(index + 4) * 0.1}s` }}
-                >
-                  <CardContent className="p-3 sm:p-4 flex items-center justify-between gap-2 sm:gap-4">
-                    <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-                      <div className={`h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 ${
+            <div className="space-y-2">
+              {recentRaffles.map((raffle) => (
+                <Card key={raffle.id}>
+                  <CardContent className="p-3 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className={`h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
                         raffle.status === "published" ? "bg-mint" : "bg-lavender"
                       }`}>
                         {raffle.status === "published" ? (
-                          <Check size={18} className="text-foreground sm:hidden" />
+                          <Check size={16} className="text-foreground" />
                         ) : (
-                          <Clock size={18} className="text-foreground sm:hidden" />
-                        )}
-                        {raffle.status === "published" ? (
-                          <Check size={22} className="text-foreground hidden sm:block" />
-                        ) : (
-                          <Clock size={22} className="text-foreground hidden sm:block" />
+                          <Clock size={16} className="text-foreground" />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h4 className="font-semibold text-foreground text-sm sm:text-base truncate">{raffle.name}</h4>
-                        <p className="text-xs sm:text-sm text-muted-foreground">
+                        <h4 className="font-medium text-sm text-foreground truncate">{raffle.name}</h4>
+                        <p className="text-xs text-muted-foreground">
                           {raffle.numbers_sold}/{raffle.total_numbers} vendidos
                         </p>
                       </div>
                     </div>
-                    <div className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium flex-shrink-0 ${
+                    <div className={`px-2 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0 ${
                       raffle.status === "published" 
                         ? "bg-mint text-foreground" 
                         : raffle.status === "pending_payment"
@@ -238,7 +261,7 @@ const Dashboard = () => {
                       {raffle.status === "published" 
                         ? "Publicada" 
                         : raffle.status === "pending_payment"
-                        ? "Aguardando pagamento"
+                        ? "Aguardando"
                         : "Rascunho"}
                     </div>
                   </CardContent>
@@ -248,18 +271,16 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* Tips Section */}
-        <Card className="gradient-soft border-0 animate-fade-in stagger-4">
-          <CardContent className="p-4 sm:p-6 flex items-start gap-3 sm:gap-4">
-            <div className="h-10 w-10 sm:h-12 sm:w-12 gradient-primary rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
-              <Sparkles size={18} className="text-primary-foreground sm:hidden" />
-              <Sparkles size={22} className="text-primary-foreground hidden sm:block" />
+        {/* Tips */}
+        <Card className="gradient-soft border-0">
+          <CardContent className="p-3 flex items-start gap-3">
+            <div className="h-9 w-9 gradient-primary rounded-lg flex items-center justify-center flex-shrink-0">
+              <Sparkles size={16} className="text-primary-foreground" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-bold text-foreground text-sm sm:text-base mb-0.5 sm:mb-1">Dica do dia</h3>
-              <p className="text-muted-foreground text-xs sm:text-sm">
-                Rifas com imagens atrativas vendem até 3x mais! 
-                Adicione fotos de alta qualidade do prêmio.
+              <h3 className="font-bold text-foreground text-sm">Dica do dia</h3>
+              <p className="text-muted-foreground text-xs">
+                Rifas com imagens atrativas vendem até 3x mais!
               </p>
             </div>
           </CardContent>

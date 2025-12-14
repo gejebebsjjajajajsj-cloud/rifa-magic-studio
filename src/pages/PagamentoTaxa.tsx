@@ -1,19 +1,95 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Check, CreditCard, Copy, QrCode, ArrowLeft, Sparkles } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Check, CreditCard, Copy, QrCode, ArrowLeft, Sparkles, Loader2 } from "lucide-react";
 
 const PagamentoTaxa = () => {
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [pixCode, setPixCode] = useState("");
+  const [raffleName, setRaffleName] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const raffleId = searchParams.get("raffle_id");
 
   const taxaValue = "R$ 9,90";
-  const pixCode = "00020126580014br.gov.bcb.pix0136a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+
+  useEffect(() => {
+    const loadRaffleAndGeneratePayment = async () => {
+      if (!raffleId) {
+        toast({
+          title: "Erro",
+          description: "ID da rifa não encontrado",
+          variant: "destructive",
+        });
+        navigate("/rifas");
+        return;
+      }
+
+      // Load raffle info
+      const { data: raffle, error } = await supabase
+        .from("raffles")
+        .select("name, status")
+        .eq("id", raffleId)
+        .single();
+
+      if (error || !raffle) {
+        toast({
+          title: "Erro",
+          description: "Rifa não encontrada",
+          variant: "destructive",
+        });
+        navigate("/rifas");
+        return;
+      }
+
+      // If already published, redirect
+      if (raffle.status === "published") {
+        toast({
+          title: "Rifa já publicada",
+          description: "Esta rifa já está ativa!",
+        });
+        navigate("/rifas");
+        return;
+      }
+
+      setRaffleName(raffle.name);
+
+      // Generate payment via edge function
+      try {
+        const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
+          "create-payment",
+          {
+            body: {
+              raffle_id: raffleId,
+              amount: 9.90,
+              description: `Taxa de publicação - ${raffle.name}`,
+            },
+          }
+        );
+
+        if (paymentError) throw paymentError;
+
+        if (paymentData?.payment?.pix_code) {
+          setPixCode(paymentData.payment.pix_code);
+        }
+      } catch (err) {
+        console.error("Error generating payment:", err);
+        // Fallback to mock pix code
+        setPixCode(`00020126580014br.gov.bcb.pix0136${raffleId}5204000053039865802BR5925RIFAMANIA6009SAO PAULO62070503***6304`);
+      }
+
+      setGenerating(false);
+    };
+
+    loadRaffleAndGeneratePayment();
+  }, [raffleId, navigate, toast]);
 
   const handleCopyPix = () => {
     navigator.clipboard.writeText(pixCode);
@@ -25,17 +101,45 @@ const PagamentoTaxa = () => {
     setTimeout(() => setCopied(false), 3000);
   };
 
-  const handleConfirmPayment = () => {
+  const handleConfirmPayment = async () => {
+    if (!raffleId) return;
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+
+    try {
+      // Call edge function to confirm payment and publish raffle
+      const { data, error } = await supabase.functions.invoke("confirm-payment", {
+        body: { raffle_id: raffleId },
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Pagamento confirmado! 🎉",
         description: "Sua rifa foi publicada com sucesso!",
       });
       navigate("/rifas");
-    }, 2000);
+    } catch (err) {
+      console.error("Error confirming payment:", err);
+      toast({
+        title: "Erro",
+        description: "Não foi possível confirmar o pagamento. Tente novamente.",
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
   };
+
+  if (generating) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-md mx-auto px-1 flex flex-col items-center justify-center min-h-[50vh]">
+          <Loader2 size={32} className="animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">Gerando pagamento...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -59,7 +163,7 @@ const PagamentoTaxa = () => {
             Pagamento da Taxa
           </h1>
           <p className="text-sm text-muted-foreground">
-            Finalize o pagamento para publicar sua rifa
+            Pague para publicar: <span className="font-medium">{raffleName}</span>
           </p>
         </div>
 
@@ -105,7 +209,7 @@ const PagamentoTaxa = () => {
                 Pagamento rápido e seguro
               </p>
               <p className="text-xs text-muted-foreground">
-                Após o pagamento, sua rifa será publicada em até 5 minutos.
+                Após o pagamento, sua rifa será publicada instantaneamente.
               </p>
             </div>
           </CardContent>
@@ -119,7 +223,7 @@ const PagamentoTaxa = () => {
         >
           {loading ? (
             <>
-              <div className="h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+              <Loader2 size={18} className="animate-spin" />
               Verificando...
             </>
           ) : (

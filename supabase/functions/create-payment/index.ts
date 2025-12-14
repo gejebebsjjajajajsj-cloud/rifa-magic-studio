@@ -5,14 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-async function getAccessToken(): Promise<string> {
-  const clientId = Deno.env.get("SYNCPAYMENTS_CLIENT_ID");
-  const clientSecret = Deno.env.get("SYNCPAYMENTS_CLIENT_SECRET");
-
-  if (!clientId || !clientSecret) {
-    throw new Error("SyncPayments credentials not configured");
-  }
-
+async function getAccessToken(clientId: string, clientSecret: string): Promise<string> {
   console.log("Authenticating with SyncPayments...");
 
   const authResponse = await fetch("https://api.syncpayments.com.br/api/partner/v1/auth-token", {
@@ -72,15 +65,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get user profile for customer info
+    // Get user profile for customer info and SyncPayments credentials
     const { data: profile } = await supabase
       .from("profiles")
-      .select("name, email")
+      .select("name, email, syncpayments_client_id, syncpayments_client_secret")
       .eq("user_id", raffle.user_id)
       .single();
 
+    // Check for SyncPayments credentials - first try user's own, then fallback to env
+    const clientId = profile?.syncpayments_client_id || Deno.env.get("SYNCPAYMENTS_CLIENT_ID");
+    const clientSecret = profile?.syncpayments_client_secret || Deno.env.get("SYNCPAYMENTS_CLIENT_SECRET");
+
+    if (!clientId || !clientSecret) {
+      return new Response(
+        JSON.stringify({ error: "SyncPayments credentials not configured" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Get access token from SyncPayments
-    const accessToken = await getAccessToken();
+    const accessToken = await getAccessToken(clientId, clientSecret);
 
     // Calculate expiration date (2 days from now)
     const expirationDate = new Date();
@@ -147,6 +151,22 @@ Deno.serve(async (req) => {
 
     const paymentData = await paymentResponse.json();
     console.log("Payment created successfully:", paymentData.idTransaction);
+
+    // Save transaction to database
+    const { error: txError } = await supabase
+      .from("payment_transactions")
+      .insert({
+        raffle_id: raffle_id,
+        transaction_id: paymentData.idTransaction,
+        amount: amount,
+        status: "pending",
+        payment_type: "publication_fee",
+        pix_code: paymentData.paymentCode,
+      });
+
+    if (txError) {
+      console.error("Error saving transaction:", txError);
+    }
 
     // Generate QR code image from base64
     const qrCodeBase64 = paymentData.paymentCodeBase64 

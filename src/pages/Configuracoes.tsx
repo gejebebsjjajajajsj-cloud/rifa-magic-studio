@@ -24,6 +24,7 @@ const Configuracoes = () => {
   const [profile, setProfile] = useState({
     name: "Maria Silva",
     email: "maria@email.com",
+    supportPhone: "",
   });
 
   const [notifications, setNotifications] = useState({

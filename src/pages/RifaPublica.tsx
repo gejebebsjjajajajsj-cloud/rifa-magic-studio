@@ -383,21 +383,16 @@ const RifaPublica = () => {
           </CardContent>
         </Card>
 
-        {/* Quick Selection */}
+        {/* Quick Add Buttons */}
         <div className="grid grid-cols-4 gap-2 mb-4">
           {quickOptions.map((option) => (
             <button
               key={option.quantity}
-              onClick={() => setQuantity(Math.min(option.quantity, availableCount))}
-              disabled={option.quantity > availableCount}
-              className={`relative p-2.5 rounded-xl text-center font-bold transition-all border-2 ${
-                quantity === option.quantity
-                  ? "border-transparent"
-                  : "bg-zinc-900 border-zinc-700 hover:border-zinc-600"
-              } ${option.quantity > availableCount ? "opacity-40 cursor-not-allowed" : ""}`}
+              onClick={() => setQuantity(Math.min(quantity + option.quantity, availableCount))}
+              disabled={quantity + option.quantity > availableCount}
+              className={`relative p-2.5 rounded-xl text-center font-bold transition-all border-2 bg-zinc-900 border-zinc-700 hover:border-zinc-600 ${quantity + option.quantity > availableCount ? "opacity-40 cursor-not-allowed" : ""}`}
               style={{
-                backgroundColor: quantity === option.quantity ? primaryColor : undefined,
-                borderColor: quantity === option.quantity ? primaryColor : undefined,
+                borderColor: primaryColor,
               }}
             >
               {option.popular && (

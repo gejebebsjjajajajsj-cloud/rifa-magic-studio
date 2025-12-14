@@ -76,8 +76,6 @@ const CriarRifa = () => {
     pricePerNumber: 10,
     primaryColor: "#EC4899",
     buttonColor: "#EC4899",
-    pixKey: "",
-    pixKeyType: "cpf",
     imageUrl: "",
     bannerUrl: "",
   });
@@ -178,7 +176,6 @@ const CriarRifa = () => {
       price_per_number: formData.pricePerNumber,
       primary_color: formData.primaryColor,
       button_color: formData.buttonColor,
-      pix_key: formData.pixKey,
       image_url: formData.imageUrl || null,
       banner_url: formData.bannerUrl || null,
       status: "pending_payment",
@@ -607,80 +604,33 @@ const CriarRifa = () => {
                 Meios de Pagamento
               </h2>
               <p className="text-muted-foreground">
-                Configure como receberá os pagamentos
+                Os pagamentos serão processados automaticamente
               </p>
             </div>
 
-            <div className="space-y-4">
-              <Card className="border-2 border-primary/50">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="h-10 w-10 gradient-primary rounded-xl flex items-center justify-center">
-                      <span className="text-primary-foreground font-bold text-sm">PIX</span>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-foreground">Pix</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Receba instantaneamente
-                      </p>
-                    </div>
-                    <Check className="ml-auto text-primary" size={24} />
-                  </div>
+            <Card className="border-2 border-primary/20 bg-secondary/30">
+              <CardContent className="p-4 text-center space-y-3">
+                <CreditCard size={32} className="mx-auto text-primary" />
+                <div>
+                  <h4 className="font-semibold text-foreground">Pagamento Automático</h4>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Conecte sua conta Mercado Pago ou SyncPayments nas <strong>Configurações</strong> para receber os pagamentos das suas rifas automaticamente.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => window.open('/configuracoes', '_blank')}
+                  className="mt-2"
+                >
+                  Ir para Configurações
+                </Button>
+              </CardContent>
+            </Card>
 
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">
-                        Tipo de Chave
-                      </label>
-                      <div className="grid grid-cols-4 gap-2">
-                        {["CPF", "Email", "Telefone", "Aleatória"].map((type) => (
-                          <button
-                            key={type}
-                            type="button"
-                            onClick={() =>
-                              updateFormData("pixKeyType", type.toLowerCase())
-                            }
-                            className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                              formData.pixKeyType === type.toLowerCase()
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {type}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">
-                        Chave Pix
-                      </label>
-                      <Input
-                        placeholder="Digite sua chave Pix"
-                        value={formData.pixKey}
-                        onChange={(e) => updateFormData("pixKey", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-2 border-border opacity-60">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-muted rounded-xl flex items-center justify-center">
-                      <CreditCard size={20} className="text-muted-foreground" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-foreground">Cartão de Crédito</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Em breve
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="text-xs text-muted-foreground text-center p-3 bg-muted/50 rounded-xl">
+              <p>✓ Pix instantâneo via SyncPayments</p>
+              <p>✓ Cartão de crédito via Mercado Pago</p>
             </div>
           </div>
         );
@@ -762,9 +712,9 @@ const CriarRifa = () => {
                 </div>
 
                 <div className="pt-4 border-t border-border">
-                  <p className="text-sm text-muted-foreground">Chave Pix</p>
+                  <p className="text-sm text-muted-foreground">Pagamento</p>
                   <p className="text-foreground">
-                    {formData.pixKey || "Não informado"}
+                    Automático via Mercado Pago / SyncPayments
                   </p>
                 </div>
               </CardContent>

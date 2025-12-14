@@ -46,8 +46,8 @@ interface Raffle {
   banner_url: string | null;
   primary_color: string | null;
   button_color: string | null;
-  pix_key: string | null;
   numbers_sold: number;
+  user_id: string;
 }
 
 interface Purchase {
@@ -85,6 +85,7 @@ const RifaPublica = () => {
   const [purchasing, setPurchasing] = useState(false);
   const [showMorePremium, setShowMorePremium] = useState(false);
   const [prizeNumbers, setPrizeNumbers] = useState<PrizeNumber[]>([]);
+  const [hasPaymentMethod, setHasPaymentMethod] = useState(false);
 
   useEffect(() => {
     const fetchRaffle = async () => {
@@ -102,6 +103,19 @@ const RifaPublica = () => {
       }
 
       setRaffle(raffleData);
+
+      // Check if owner has payment method configured
+      const { data: ownerProfile } = await supabase
+        .from("profiles")
+        .select("mercado_pago_access_token, syncpayments_client_id, syncpayments_client_secret")
+        .eq("user_id", raffleData.user_id)
+        .single();
+
+      if (ownerProfile) {
+        const hasMp = !!ownerProfile.mercado_pago_access_token;
+        const hasSp = !!(ownerProfile as any).syncpayments_client_id && !!(ownerProfile as any).syncpayments_client_secret;
+        setHasPaymentMethod(hasMp || hasSp);
+      }
 
       // Fetch purchases
       const { data: purchases } = await supabase
@@ -183,6 +197,15 @@ const RifaPublica = () => {
       toast({
         title: "Preencha todos os campos",
         description: "Nome e email são obrigatórios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!hasPaymentMethod) {
+      toast({
+        title: "Pagamento indisponível",
+        description: "O organizador ainda não configurou um meio de pagamento",
         variant: "destructive",
       });
       return;
@@ -572,14 +595,26 @@ const RifaPublica = () => {
       {/* Fixed CTA */}
       <div className="fixed bottom-0 left-0 right-0 p-3 bg-zinc-950/95 backdrop-blur border-t border-zinc-800">
         <div className="max-w-md mx-auto">
-          <Button
-            onClick={() => setShowPurchaseDialog(true)}
-            className="w-full h-11 text-base font-bold rounded-xl text-white shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-1.5"
-            style={{ backgroundColor: buttonColor }}
-          >
-            Participar – R$ {totalAmount.toFixed(2).replace(".", ",")}
-            <ArrowRight size={16} />
-          </Button>
+          {hasPaymentMethod ? (
+            <Button
+              onClick={() => setShowPurchaseDialog(true)}
+              className="w-full h-11 text-base font-bold rounded-xl text-white shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-1.5"
+              style={{ backgroundColor: buttonColor }}
+            >
+              Participar – R$ {totalAmount.toFixed(2).replace(".", ",")}
+              <ArrowRight size={16} />
+            </Button>
+          ) : (
+            <div className="text-center">
+              <p className="text-xs text-red-400 mb-1">Pagamento não configurado</p>
+              <Button
+                disabled
+                className="w-full h-11 text-base font-bold rounded-xl opacity-50"
+              >
+                Indisponível
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

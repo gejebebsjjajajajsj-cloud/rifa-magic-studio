@@ -96,6 +96,50 @@ Deno.serve(async (req) => {
       }
     }
 
+    // If payment confirmed and it's a raffle purchase, update purchase status
+    if (newStatus === "confirmed" && transaction.payment_type === "raffle_purchase") {
+      console.log(`Confirming raffle purchase for raffle ${transaction.raffle_id}`);
+      
+      // Find the purchase by matching the transaction metadata
+      const { data: purchases, error: purchasesError } = await supabase
+        .from("raffle_purchases")
+        .select("*")
+        .eq("raffle_id", transaction.raffle_id)
+        .eq("payment_status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (purchasesError) {
+        console.error("Error finding purchase:", purchasesError);
+      } else if (purchases && purchases.length > 0) {
+        const purchase = purchases[0];
+        
+        const { error: updatePurchaseError } = await supabase
+          .from("raffle_purchases")
+          .update({ payment_status: "confirmed", updated_at: new Date().toISOString() })
+          .eq("id", purchase.id);
+
+        if (updatePurchaseError) {
+          console.error("Error updating purchase:", updatePurchaseError);
+        } else {
+          console.log(`Purchase ${purchase.id} confirmed! Numbers: ${purchase.numbers_purchased}`);
+          
+          // Update raffle stats
+          const { error: raffleUpdateError } = await supabase
+            .from("raffles")
+            .update({ 
+              numbers_sold: purchase.quantity,
+              total_earned: purchase.total_amount,
+            })
+            .eq("id", transaction.raffle_id);
+
+          if (raffleUpdateError) {
+            console.error("Error updating raffle stats:", raffleUpdateError);
+          }
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({ success: true, status: newStatus }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -18,6 +18,7 @@ import Configuracoes from "./pages/Configuracoes";
 import Suporte from "./pages/Suporte";
 import RifaPublica from "./pages/RifaPublica";
 import RifasPublicas from "./pages/RifasPublicas";
+import MeusNumeros from "./pages/MeusNumeros";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/explorar" element={<RifasPublicas />} />
             <Route path="/rifa/:id" element={<RifaPublica />} />
+            <Route path="/meus-numeros" element={<MeusNumeros />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/criar-rifa" element={<ProtectedRoute><CriarRifa /></ProtectedRoute>} />
             <Route path="/editar-rifa/:id" element={<ProtectedRoute><EditarRifa /></ProtectedRoute>} />

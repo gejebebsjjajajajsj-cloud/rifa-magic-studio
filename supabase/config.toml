@@ -1,4 +1,13 @@
 project_id = "dhexvuoapevbktabspzx"
 
+[functions.create-payment]
+verify_jwt = false
+
+[functions.confirm-payment]
+verify_jwt = false
+
 [functions.payment-webhook]
+verify_jwt = false
+
+[functions.create-raffle-payment]
 verify_jwt = false

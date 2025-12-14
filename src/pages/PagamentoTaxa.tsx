@@ -12,6 +12,7 @@ const PagamentoTaxa = () => {
   const [generating, setGenerating] = useState(true);
   const [copied, setCopied] = useState(false);
   const [pixCode, setPixCode] = useState("");
+  const [qrCode, setQrCode] = useState<string | null>(null);
   const [raffleName, setRaffleName] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -79,6 +80,9 @@ const PagamentoTaxa = () => {
         if (paymentData?.payment?.pix_code) {
           setPixCode(paymentData.payment.pix_code);
         }
+        if (paymentData?.payment?.qr_code) {
+          setQrCode(paymentData.payment.qr_code);
+        }
       } catch (err) {
         console.error("Error generating payment:", err);
         // Fallback to mock pix code
@@ -133,7 +137,7 @@ const PagamentoTaxa = () => {
   if (generating) {
     return (
       <DashboardLayout>
-        <div className="max-w-md mx-auto px-1 flex flex-col items-center justify-center min-h-[50vh]">
+        <div className="max-w-sm w-full mx-auto px-4 flex flex-col items-center justify-center min-h-[50vh]">
           <Loader2 size={32} className="animate-spin text-primary mb-4" />
           <p className="text-muted-foreground">Gerando pagamento...</p>
         </div>
@@ -143,7 +147,7 @@ const PagamentoTaxa = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-md mx-auto px-1">
+      <div className="max-w-sm w-full mx-auto px-4 pb-6">
         <Button
           variant="ghost"
           onClick={() => navigate(-1)}
@@ -175,11 +179,27 @@ const PagamentoTaxa = () => {
             </div>
 
             <div className="border-2 border-dashed border-border rounded-xl p-4 text-center mb-4">
-              <QrCode size={80} className="mx-auto text-foreground mb-2 sm:hidden" />
-              <QrCode size={100} className="mx-auto text-foreground mb-3 hidden sm:block" />
-              <p className="text-xs text-muted-foreground">
-                Escaneie o QR Code com seu app de banco
-              </p>
+              {qrCode ? (
+                <>
+                  <img
+                    src={qrCode}
+                    alt="QR Code Pix para pagamento da taxa de publicação"
+                    className="mx-auto w-40 h-40 object-contain mb-2"
+                    loading="lazy"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Escaneie o QR Code com seu app de banco para pagar a taxa.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <QrCode size={80} className="mx-auto text-foreground mb-2 sm:hidden" />
+                  <QrCode size={100} className="mx-auto text-foreground mb-3 hidden sm:block" />
+                  <p className="text-xs text-muted-foreground">
+                    Gerando QR Code Pix...
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="space-y-2">

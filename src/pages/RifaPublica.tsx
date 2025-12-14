@@ -52,6 +52,7 @@ interface Raffle {
 
 interface Purchase {
   numbers_purchased: number[];
+  buyer_name: string;
 }
 
 interface PrizeNumber {
@@ -74,6 +75,7 @@ const RifaPublica = () => {
   const [raffle, setRaffle] = useState<Raffle | null>(null);
   const [loading, setLoading] = useState(true);
   const [soldNumbers, setSoldNumbers] = useState<number[]>([]);
+  const [confirmedPurchases, setConfirmedPurchases] = useState<Purchase[]>([]);
   const [quantity, setQuantity] = useState(25);
   const [showDescription, setShowDescription] = useState(false);
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
@@ -104,11 +106,12 @@ const RifaPublica = () => {
       // Fetch purchases
       const { data: purchases } = await supabase
         .from("raffle_purchases")
-        .select("numbers_purchased")
+        .select("numbers_purchased, buyer_name")
         .eq("raffle_id", id)
         .eq("payment_status", "confirmed");
 
       if (purchases) {
+        setConfirmedPurchases(purchases as Purchase[]);
         const allSold = purchases.flatMap((p: Purchase) => p.numbers_purchased);
         setSoldNumbers(allSold);
       }
@@ -146,11 +149,12 @@ const RifaPublica = () => {
         async () => {
           const { data: purchases } = await supabase
             .from("raffle_purchases")
-            .select("numbers_purchased")
+            .select("numbers_purchased, buyer_name")
             .eq("raffle_id", id)
             .eq("payment_status", "confirmed");
 
           if (purchases) {
+            setConfirmedPurchases(purchases as Purchase[]);
             const allSold = purchases.flatMap((p: Purchase) => p.numbers_purchased);
             setSoldNumbers(allSold);
           }
@@ -240,15 +244,26 @@ const RifaPublica = () => {
   const availableCount = raffle ? raffle.total_numbers - soldNumbers.length : 0;
 
   // Generate prize number display from database
+  const buyerByNumber: Record<number, string> = {};
+  confirmedPurchases.forEach((purchase) => {
+    purchase.numbers_purchased.forEach((num) => {
+      if (!buyerByNumber[num]) {
+        buyerByNumber[num] = purchase.buyer_name;
+      }
+    });
+  });
+
   const allPrizeItems = prizeNumbers.flatMap(pn => {
     const items = [];
     for (let i = 0; i < pn.quantity; i++) {
       const prizeNum = pn.numbers[i];
       const isSold = prizeNum ? soldNumbers.includes(prizeNum) : false;
+      const winnerName = prizeNum ? buyerByNumber[prizeNum] : undefined;
       items.push({
         number: prizeNum ? String(prizeNum).padStart(3, "0") : "---",
         prize: `R$ ${pn.prize_value.toFixed(2).replace(".", ",")}`,
         status: isSold ? "sold" : "available",
+        winnerName,
       });
     }
     return items;
@@ -504,6 +519,11 @@ const RifaPublica = () => {
                       <div>
                         <p className="text-white font-mono font-bold text-xs">{item.number}</p>
                         <p className="text-[10px] text-zinc-400">{item.prize}</p>
+                        {item.winnerName && (
+                          <p className="text-[10px] text-emerald-400 font-semibold mt-0.5">
+                            {item.winnerName}
+                          </p>
+                        )}
                       </div>
                       <span 
                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${

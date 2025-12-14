@@ -10,21 +10,14 @@ import { MercadoPagoModal } from "@/components/MercadoPagoModal";
 import { 
   User, 
   Mail, 
-  Lock, 
   CreditCard, 
-  Bell, 
   Save,
-  Eye,
-  EyeOff,
   MessageCircle,
   CheckCircle,
-  AlertCircle,
   Loader2
 } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 
 const Configuracoes = () => {
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [mercadoPagoModalOpen, setMercadoPagoModalOpen] = useState(false);
@@ -37,12 +30,6 @@ const Configuracoes = () => {
     email: "",
     supportPhone: "",
     mercadoPagoToken: "",
-  });
-
-  const [notifications, setNotifications] = useState({
-    email: true,
-    sales: true,
-    marketing: false,
   });
 
   useEffect(() => {
@@ -275,103 +262,6 @@ const Configuracoes = () => {
           onSave={handleSaveMercadoPagoToken}
           connectionStatus={connectionStatus}
         />
-
-        {/* Password Section */}
-        <Card>
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <Lock size={16} />
-              Alterar Senha
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 pt-0 space-y-3">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-foreground">Senha atual</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="pl-9 pr-9 h-9 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-foreground">Nova senha</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="pl-9 h-9 text-sm"
-                />
-              </div>
-            </div>
-
-            <Button variant="outline" size="sm" className="w-full">
-              <Lock size={14} />
-              Alterar senha
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Notifications Section */}
-        <Card>
-          <CardHeader className="py-3 px-4">
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <Bell size={16} />
-              Notificações
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4 pt-0 space-y-2">
-            <div className="flex items-center justify-between py-2">
-              <div>
-                <p className="text-sm font-medium text-foreground">Email</p>
-                <p className="text-xs text-muted-foreground">Receber atualizações</p>
-              </div>
-              <Switch
-                checked={notifications.email}
-                onCheckedChange={(checked) =>
-                  setNotifications({ ...notifications, email: checked })
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-2">
-              <div>
-                <p className="text-sm font-medium text-foreground">Vendas</p>
-                <p className="text-xs text-muted-foreground">Alertas de vendas</p>
-              </div>
-              <Switch
-                checked={notifications.sales}
-                onCheckedChange={(checked) =>
-                  setNotifications({ ...notifications, sales: checked })
-                }
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-2">
-              <div>
-                <p className="text-sm font-medium text-foreground">Novidades</p>
-                <p className="text-xs text-muted-foreground">Dicas e promoções</p>
-              </div>
-              <Switch
-                checked={notifications.marketing}
-                onCheckedChange={(checked) =>
-                  setNotifications({ ...notifications, marketing: checked })
-                }
-              />
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   );

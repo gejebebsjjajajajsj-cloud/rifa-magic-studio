@@ -243,10 +243,12 @@ const RifaPublica = () => {
   const allPrizeItems = prizeNumbers.flatMap(pn => {
     const items = [];
     for (let i = 0; i < pn.quantity; i++) {
+      const prizeNum = pn.numbers[i];
+      const isSold = prizeNum ? soldNumbers.includes(prizeNum) : false;
       items.push({
-        number: pn.numbers[i]?.toString().padStart(7, "0") || `${Math.floor(1000000 + Math.random() * 9000000)}`,
+        number: prizeNum ? String(prizeNum).padStart(3, "0") : "---",
         prize: `R$ ${pn.prize_value.toFixed(2).replace(".", ",")}`,
-        status: Math.random() > 0.3 ? "available" : "sold",
+        status: isSold ? "sold" : "available",
       });
     }
     return items;
@@ -466,7 +468,7 @@ const RifaPublica = () => {
         </Card>
 
         {/* Prize Numbers Section */}
-        {(prizeNumbers.length > 0 || true) && (
+        {prizeNumbers.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center gap-1.5 mb-3">
               <Trophy className="text-yellow-400" size={18} />

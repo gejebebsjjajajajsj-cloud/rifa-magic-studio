@@ -20,14 +20,18 @@ import {
   Upload,
   Palette,
   Loader2,
+  Trophy,
+  Plus,
+  Trash2,
 } from "lucide-react";
 
 const steps = [
   { id: 1, title: "Informações", icon: FileText },
   { id: 2, title: "Números", icon: Hash },
-  { id: 3, title: "Aparência", icon: Image },
-  { id: 4, title: "Pagamento", icon: CreditCard },
-  { id: 5, title: "Revisão", icon: CheckCircle },
+  { id: 3, title: "Prêmios", icon: Trophy },
+  { id: 4, title: "Aparência", icon: Image },
+  { id: 5, title: "Pagamento", icon: CreditCard },
+  { id: 6, title: "Revisão", icon: CheckCircle },
 ];
 
 const categories = [
@@ -48,11 +52,17 @@ const colors = [
   { name: "Vermelho", value: "#EF4444" },
 ];
 
+interface PrizeTier {
+  prizeValue: number;
+  quantity: number;
+}
+
 const CriarRifa = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [prizeTiers, setPrizeTiers] = useState<PrizeTier[]>([{ prizeValue: 50, quantity: 5 }]);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -76,6 +86,20 @@ const CriarRifa = () => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
+  const addPrizeTier = () => {
+    setPrizeTiers([...prizeTiers, { prizeValue: 50, quantity: 1 }]);
+  };
+
+  const removePrizeTier = (index: number) => {
+    setPrizeTiers(prizeTiers.filter((_, i) => i !== index));
+  };
+
+  const updatePrizeTier = (index: number, key: keyof PrizeTier, value: number) => {
+    const updated = [...prizeTiers];
+    updated[index][key] = value;
+    setPrizeTiers(updated);
+  };
+
   const nextStep = () => {
     if (currentStep === 1) {
       if (!formData.name || !formData.description || !formData.category || !formData.endDate) {
@@ -87,7 +111,7 @@ const CriarRifa = () => {
         return;
       }
     }
-    if (currentStep < 5) setCurrentStep(currentStep + 1);
+    if (currentStep < 6) setCurrentStep(currentStep + 1);
   };
 
   const prevStep = () => {
@@ -167,6 +191,25 @@ const CriarRifa = () => {
       });
       setLoading(false);
       return;
+    }
+
+    // Insert prize numbers if configured
+    if (prizeTiers.length > 0 && data) {
+      const prizePromises = prizeTiers.map(tier => {
+        // Generate random numbers for this prize tier
+        const availableNumbers = Array.from({ length: formData.totalNumbers }, (_, i) => i + 1);
+        const shuffled = availableNumbers.sort(() => 0.5 - Math.random());
+        const prizeNums = shuffled.slice(0, tier.quantity);
+        
+        return supabase.from("prize_numbers").insert({
+          raffle_id: data.id,
+          prize_value: tier.prizeValue,
+          quantity: tier.quantity,
+          numbers: prizeNums,
+        });
+      });
+
+      await Promise.all(prizePromises);
     }
 
     toast({
@@ -348,6 +391,99 @@ const CriarRifa = () => {
         );
 
       case 3:
+        return (
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-2">
+                Números Premiados
+              </h2>
+              <p className="text-muted-foreground">
+                Configure os prêmios para os números sorteados
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {prizeTiers.map((tier, index) => (
+                <Card key={index} className="border-2 border-primary/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <Trophy size={16} className="text-yellow-500" />
+                        Faixa de Prêmio #{index + 1}
+                      </span>
+                      {prizeTiers.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removePrizeTier(index)}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-muted-foreground">
+                          Valor do Prêmio (R$)
+                        </label>
+                        <Input
+                          type="number"
+                          value={tier.prizeValue}
+                          onChange={(e) => updatePrizeTier(index, "prizeValue", parseFloat(e.target.value) || 0)}
+                          placeholder="50.00"
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-muted-foreground">
+                          Quantidade de Números
+                        </label>
+                        <Input
+                          type="number"
+                          value={tier.quantity}
+                          onChange={(e) => updatePrizeTier(index, "quantity", parseInt(e.target.value) || 1)}
+                          placeholder="5"
+                          min={1}
+                          className="h-9"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addPrizeTier}
+                className="w-full"
+              >
+                <Plus size={16} className="mr-2" />
+                Adicionar Faixa de Prêmio
+              </Button>
+
+              <Card className="bg-secondary/30 border-0">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Total de números premiados:</span>
+                    <span className="font-bold text-foreground">
+                      {prizeTiers.reduce((acc, t) => acc + t.quantity, 0)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mt-2">
+                    <span className="text-muted-foreground">Valor total em prêmios:</span>
+                    <span className="font-bold text-foreground">
+                      R$ {prizeTiers.reduce((acc, t) => acc + (t.prizeValue * t.quantity), 0).toFixed(2)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        );
+
+      case 6:
         return (
           <div className="space-y-6 animate-fade-in">
             <div>
@@ -613,6 +749,17 @@ const CriarRifa = () => {
                 </div>
 
                 <div className="pt-4 border-t border-border">
+                  <p className="text-sm text-muted-foreground">Números Premiados</p>
+                  <div className="space-y-1 mt-1">
+                    {prizeTiers.map((tier, i) => (
+                      <p key={i} className="text-foreground text-sm">
+                        {tier.quantity}x números de R$ {tier.prizeValue.toFixed(2)}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-border">
                   <p className="text-sm text-muted-foreground">Chave Pix</p>
                   <p className="text-foreground">
                     {formData.pixKey || "Não informado"}
@@ -705,7 +852,7 @@ const CriarRifa = () => {
             <span className="hidden sm:inline">Voltar</span>
           </Button>
 
-          {currentStep < 5 ? (
+          {currentStep < 6 ? (
             <Button onClick={nextStep} size="sm" className="sm:size-default">
               <span>Próximo</span>
               <ArrowRight size={16} className="sm:hidden" />

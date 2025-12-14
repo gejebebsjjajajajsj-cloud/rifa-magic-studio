@@ -58,6 +58,8 @@ export type Database = {
           mercado_pago_access_token: string | null
           name: string | null
           support_phone: string | null
+          syncpayments_client_id: string | null
+          syncpayments_client_secret: string | null
           updated_at: string
           user_id: string
         }
@@ -69,6 +71,8 @@ export type Database = {
           mercado_pago_access_token?: string | null
           name?: string | null
           support_phone?: string | null
+          syncpayments_client_id?: string | null
+          syncpayments_client_secret?: string | null
           updated_at?: string
           user_id: string
         }
@@ -80,6 +84,8 @@ export type Database = {
           mercado_pago_access_token?: string | null
           name?: string | null
           support_phone?: string | null
+          syncpayments_client_id?: string | null
+          syncpayments_client_secret?: string | null
           updated_at?: string
           user_id?: string
         }

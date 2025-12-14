@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { MercadoPagoModal } from "@/components/MercadoPagoModal";
+import { SyncPaymentsModal } from "@/components/SyncPaymentsModal";
 import { 
   User, 
   Mail, 
@@ -21,7 +22,9 @@ const Configuracoes = () => {
   const [loading, setLoading] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [mercadoPagoModalOpen, setMercadoPagoModalOpen] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [syncPaymentsModalOpen, setSyncPaymentsModalOpen] = useState(false);
+  const [mpConnectionStatus, setMpConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [spConnectionStatus, setSpConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -30,6 +33,8 @@ const Configuracoes = () => {
     email: "",
     supportPhone: "",
     mercadoPagoToken: "",
+    syncPaymentsClientId: "",
+    syncPaymentsClientSecret: "",
   });
 
   useEffect(() => {
@@ -54,9 +59,14 @@ const Configuracoes = () => {
             email: data.email || user.email || "",
             supportPhone: data.support_phone || "",
             mercadoPagoToken: data.mercado_pago_access_token || "",
+            syncPaymentsClientId: (data as any).syncpayments_client_id || "",
+            syncPaymentsClientSecret: (data as any).syncpayments_client_secret || "",
           });
           if (data.mercado_pago_access_token) {
-            setConnectionStatus('success');
+            setMpConnectionStatus('success');
+          }
+          if ((data as any).syncpayments_client_id && (data as any).syncpayments_client_secret) {
+            setSpConnectionStatus('success');
           }
         } else {
           setProfile({
@@ -64,6 +74,8 @@ const Configuracoes = () => {
             email: user.email || "",
             supportPhone: "",
             mercadoPagoToken: "",
+            syncPaymentsClientId: "",
+            syncPaymentsClientSecret: "",
           });
         }
       } catch (error) {
@@ -90,8 +102,10 @@ const Configuracoes = () => {
           email: profile.email,
           support_phone: profile.supportPhone,
           mercado_pago_access_token: profile.mercadoPagoToken,
+          syncpayments_client_id: profile.syncPaymentsClientId,
+          syncpayments_client_secret: profile.syncPaymentsClientSecret,
           updated_at: new Date().toISOString(),
-        }, {
+        } as any, {
           onConflict: 'user_id'
         });
 
@@ -129,11 +143,36 @@ const Configuracoes = () => {
     if (error) throw error;
 
     setProfile({ ...profile, mercadoPagoToken: token });
-    setConnectionStatus(token ? 'success' : 'idle');
+    setMpConnectionStatus(token ? 'success' : 'idle');
     
     toast({
       title: "Token salvo!",
       description: "Mercado Pago conectado com sucesso.",
+    });
+  };
+
+  const handleSaveSyncPayments = async (clientId: string, clientSecret: string) => {
+    if (!user) return;
+    
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({
+        user_id: user.id,
+        syncpayments_client_id: clientId,
+        syncpayments_client_secret: clientSecret,
+        updated_at: new Date().toISOString(),
+      } as any, {
+        onConflict: 'user_id'
+      });
+
+    if (error) throw error;
+
+    setProfile({ ...profile, syncPaymentsClientId: clientId, syncPaymentsClientSecret: clientSecret });
+    setSpConnectionStatus(clientId && clientSecret ? 'success' : 'idle');
+    
+    toast({
+      title: "Credenciais salvas!",
+      description: "SyncPayments conectado com sucesso.",
     });
   };
 
@@ -223,44 +262,90 @@ const Configuracoes = () => {
           </CardContent>
         </Card>
 
-        {/* Mercado Pago Integration - Clean Button */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 bg-[#00A1E4] rounded-xl flex items-center justify-center">
-                  <CreditCard className="h-5 w-5 text-white" />
+        {/* Payment Integrations */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground px-1">Integrações de Pagamento</p>
+          
+          {/* Mercado Pago */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-[#00A1E4] rounded-xl flex items-center justify-center">
+                    <CreditCard className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-sm text-foreground">Mercado Pago</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {mpConnectionStatus === 'success' ? (
+                        <span className="flex items-center gap-1 text-green-600">
+                          <CheckCircle size={12} /> Conectado
+                        </span>
+                      ) : (
+                        "Receba pagamentos"
+                      )}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium text-sm text-foreground">Mercado Pago</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {connectionStatus === 'success' ? (
-                      <span className="flex items-center gap-1 text-green-600">
-                        <CheckCircle size={12} /> Conectado
-                      </span>
-                    ) : (
-                      "Receba pagamentos"
-                    )}
-                  </p>
-                </div>
+                <Button 
+                  variant={mpConnectionStatus === 'success' ? "outline" : "default"}
+                  size="sm"
+                  onClick={() => setMercadoPagoModalOpen(true)}
+                >
+                  {mpConnectionStatus === 'success' ? "Gerenciar" : "Conectar"}
+                </Button>
               </div>
-              <Button 
-                variant={connectionStatus === 'success' ? "outline" : "default"}
-                size="sm"
-                onClick={() => setMercadoPagoModalOpen(true)}
-              >
-                {connectionStatus === 'success' ? "Gerenciar" : "Conectar"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* SyncPayments */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 bg-purple-600 rounded-xl flex items-center justify-center">
+                    <span className="text-white font-bold text-xs">SP</span>
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-sm text-foreground">SyncPayments</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {spConnectionStatus === 'success' ? (
+                        <span className="flex items-center gap-1 text-green-600">
+                          <CheckCircle size={12} /> Conectado
+                        </span>
+                      ) : (
+                        "PIX automático"
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant={spConnectionStatus === 'success' ? "outline" : "default"}
+                  size="sm"
+                  onClick={() => setSyncPaymentsModalOpen(true)}
+                >
+                  {spConnectionStatus === 'success' ? "Gerenciar" : "Conectar"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         <MercadoPagoModal
           open={mercadoPagoModalOpen}
           onOpenChange={setMercadoPagoModalOpen}
           currentToken={profile.mercadoPagoToken}
           onSave={handleSaveMercadoPagoToken}
-          connectionStatus={connectionStatus}
+          connectionStatus={mpConnectionStatus}
+        />
+
+        <SyncPaymentsModal
+          open={syncPaymentsModalOpen}
+          onOpenChange={setSyncPaymentsModalOpen}
+          currentClientId={profile.syncPaymentsClientId}
+          currentClientSecret={profile.syncPaymentsClientSecret}
+          onSave={handleSaveSyncPayments}
+          connectionStatus={spConnectionStatus}
         />
       </div>
     </DashboardLayout>

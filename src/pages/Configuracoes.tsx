@@ -12,7 +12,8 @@ import {
   Bell, 
   Save,
   Eye,
-  EyeOff
+  EyeOff,
+  MessageCircle
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
@@ -93,6 +94,21 @@ const Configuracoes = () => {
                     type="email"
                     value={profile.email}
                     onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                    className="pl-12"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">WhatsApp de Suporte</label>
+                <p className="text-xs text-muted-foreground">Número que aparecerá no botão de suporte das suas rifas</p>
+                <div className="relative">
+                  <MessageCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                  <Input
+                    type="tel"
+                    placeholder="(11) 99999-9999"
+                    value={profile.supportPhone}
+                    onChange={(e) => setProfile({ ...profile, supportPhone: e.target.value })}
                     className="pl-12"
                   />
                 </div>

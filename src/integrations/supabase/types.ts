@@ -55,7 +55,9 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          mercado_pago_access_token: string | null
           name: string | null
+          support_phone: string | null
           updated_at: string
           user_id: string
         }
@@ -64,7 +66,9 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          mercado_pago_access_token?: string | null
           name?: string | null
+          support_phone?: string | null
           updated_at?: string
           user_id: string
         }
@@ -73,7 +77,9 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          mercado_pago_access_token?: string | null
           name?: string | null
+          support_phone?: string | null
           updated_at?: string
           user_id?: string
         }

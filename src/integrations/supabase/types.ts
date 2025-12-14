@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      payment_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          payment_type: string
+          pix_code: string | null
+          raffle_id: string
+          status: string
+          transaction_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          payment_type?: string
+          pix_code?: string | null
+          raffle_id: string
+          status?: string
+          transaction_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          payment_type?: string
+          pix_code?: string | null
+          raffle_id?: string
+          status?: string
+          transaction_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_transactions_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prize_numbers: {
         Row: {
           created_at: string

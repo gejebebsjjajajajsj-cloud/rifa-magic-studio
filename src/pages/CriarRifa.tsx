@@ -167,6 +167,7 @@ const CriarRifa = () => {
 
     setLoading(true);
 
+    // Save raffle with pending_payment status
     const { data, error } = await supabase.from("raffles").insert({
       user_id: user.id,
       name: formData.name,
@@ -180,7 +181,7 @@ const CriarRifa = () => {
       pix_key: formData.pixKey,
       image_url: formData.imageUrl || null,
       banner_url: formData.bannerUrl || null,
-      status: "published",
+      status: "pending_payment",
     }).select().single();
 
     if (error) {
@@ -213,11 +214,12 @@ const CriarRifa = () => {
     }
 
     toast({
-      title: "Rifa criada!",
-      description: "Sua rifa já está publicada. Você pode pré-visualizar e compartilhar o link.",
+      title: "Rifa salva!",
+      description: "Agora pague a taxa para publicar sua rifa.",
     });
     
-    navigate("/rifas");
+    // Redirect to payment page with raffle ID
+    navigate(`/pagamento-taxa?raffle_id=${data.id}`);
   };
 
   const renderStepContent = () => {

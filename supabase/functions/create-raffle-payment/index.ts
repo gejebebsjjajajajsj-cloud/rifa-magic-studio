@@ -261,9 +261,14 @@ Deno.serve(async (req) => {
         purchase_id
       );
 
+      console.log("Raw Mercado Pago response:", JSON.stringify(paymentResult));
+
       const transactionData = paymentResult.point_of_interaction?.transaction_data;
       const pixCode = transactionData?.qr_code || "";
       const qrCodeBase64 = transactionData?.qr_code_base64 || "";
+
+      console.log("Mercado Pago PIX code:", pixCode ? "present" : "missing");
+      console.log("Mercado Pago QR base64:", qrCodeBase64 ? "present" : "missing");
 
       // Save transaction
       await supabase.from("payment_transactions").insert({

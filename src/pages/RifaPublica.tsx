@@ -671,9 +671,9 @@ const RifaPublica = () => {
 
       {/* Purchase Dialog */}
       <Dialog open={showPurchaseDialog} onOpenChange={handleCloseDialog}>
-        <DialogContent className="max-w-sm bg-zinc-900 border-zinc-800 text-white mx-3">
+        <DialogContent className="w-[calc(100vw-24px)] max-w-sm bg-zinc-900 border-zinc-800 text-white p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-white text-base">
+            <DialogTitle className="text-white text-sm sm:text-base">
               {checkoutStep === "form" && "Finalizar compra"}
               {checkoutStep === "payment" && "Pague via PIX"}
               {checkoutStep === "success" && "Pagamento confirmado!"}
@@ -740,49 +740,53 @@ const RifaPublica = () => {
           )}
 
           {checkoutStep === "payment" && (
-            <div className="space-y-4 pt-2">
-              <div className="bg-zinc-800 rounded-lg p-3 text-center">
-                <p className="text-xs text-zinc-400 mb-1">Valor a pagar</p>
-                <p className="text-2xl font-bold" style={{ color: primaryColor }}>
+            <div className="space-y-3 pt-2">
+              <div className="bg-zinc-800 rounded-lg p-2 sm:p-3 text-center">
+                <p className="text-[10px] sm:text-xs text-zinc-400 mb-0.5">Valor a pagar</p>
+                <p className="text-xl sm:text-2xl font-bold" style={{ color: primaryColor }}>
                   R$ {totalAmount.toFixed(2).replace(".", ",")}
                 </p>
               </div>
 
-              {/* QR Code */}
-              <div className="border-2 border-dashed border-zinc-700 rounded-lg p-4 text-center">
-                {qrCodeImage ? (
-                  <img src={qrCodeImage} alt="QR Code PIX" className="w-40 h-40 mx-auto rounded" />
-                ) : pixCode ? (
-                  <QRCodeSVG value={pixCode} size={160} level="M" className="mx-auto" />
+              {/* QR Code - sempre gera via SVG se tiver pixCode */}
+              <div className="border-2 border-dashed border-zinc-700 rounded-lg p-3 text-center">
+                {pixCode ? (
+                  <>
+                    {qrCodeImage ? (
+                      <img src={qrCodeImage} alt="QR Code PIX" className="w-32 h-32 sm:w-40 sm:h-40 mx-auto rounded" />
+                    ) : (
+                      <QRCodeSVG value={pixCode} size={140} level="M" className="mx-auto" />
+                    )}
+                  </>
                 ) : (
-                  <div className="w-40 h-40 mx-auto bg-zinc-800 rounded flex items-center justify-center">
+                  <div className="w-32 h-32 sm:w-40 sm:h-40 mx-auto bg-zinc-800 rounded flex items-center justify-center">
                     <Loader2 className="animate-spin text-zinc-500" />
                   </div>
                 )}
-                <p className="text-[10px] text-zinc-500 mt-2">
+                <p className="text-[9px] sm:text-[10px] text-zinc-500 mt-2">
                   Escaneie o QR Code com o app do seu banco
                 </p>
               </div>
 
               {/* PIX Code Copy */}
-              <div className="space-y-1.5">
-                <p className="text-[10px] font-medium text-zinc-400">Ou copie o código PIX:</p>
-                <div className="flex gap-2">
-                  <div className="flex-1 bg-zinc-800 rounded-md p-2 text-[10px] text-zinc-400 font-mono truncate overflow-hidden">
+              <div className="space-y-1">
+                <p className="text-[9px] sm:text-[10px] font-medium text-zinc-400">Ou copie o código PIX:</p>
+                <div className="flex gap-1.5">
+                  <div className="flex-1 bg-zinc-800 rounded-md p-1.5 sm:p-2 text-[8px] sm:text-[10px] text-zinc-400 font-mono truncate overflow-hidden max-w-[calc(100%-40px)]">
                     {pixCode}
                   </div>
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={handleCopyPix}
-                    className="flex-shrink-0 h-8 w-8 bg-zinc-800 border-zinc-700"
+                    className="flex-shrink-0 h-7 w-7 sm:h-8 sm:w-8 bg-zinc-800 border-zinc-700"
                   >
-                    {copied ? <Check size={14} /> : <Copy size={14} />}
+                    {copied ? <Check size={12} /> : <Copy size={12} />}
                   </Button>
                 </div>
               </div>
 
-              <p className="text-[10px] text-zinc-500 text-center">
+              <p className="text-[9px] sm:text-[10px] text-zinc-500 text-center">
                 Após o pagamento, seus números serão confirmados automaticamente.
                 <br />
                 <Link to="/meus-numeros" className="text-emerald-400 underline">

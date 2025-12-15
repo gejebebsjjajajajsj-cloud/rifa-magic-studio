@@ -722,8 +722,27 @@ const CriarRifa = () => {
 
             <Card className="bg-accent/10 border-accent/30">
               <CardContent className="p-4">
-                <p className="text-sm text-foreground">
-                  ⚠️ Sua rifa só será publicada após o pagamento da taxa de publicação.
+                <p className="text-sm font-medium text-foreground mb-2">
+                  💰 Taxa de Publicação:
+                </p>
+                <div className="space-y-1 text-xs text-muted-foreground">
+                  {formData.totalNumbers <= 10000 && (
+                    <p className="text-lg font-bold text-primary">R$ 97,00</p>
+                  )}
+                  {formData.totalNumbers > 10000 && formData.totalNumbers <= 50000 && (
+                    <p className="text-lg font-bold text-primary">R$ 149,00</p>
+                  )}
+                  {formData.totalNumbers > 50000 && formData.totalNumbers <= 100000 && (
+                    <p className="text-lg font-bold text-primary">R$ 197,00</p>
+                  )}
+                  {formData.totalNumbers > 100000 && (
+                    <p className="text-sm text-destructive font-medium">
+                      ⚠️ Acima de 100.000 números requer plano avançado. Entre em contato com o suporte.
+                    </p>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Sua rifa só será publicada após o pagamento da taxa.
                 </p>
               </CardContent>
             </Card>

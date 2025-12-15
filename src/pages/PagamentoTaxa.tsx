@@ -5,22 +5,38 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Check, CreditCard, Copy, ArrowLeft, Sparkles, Loader2, RefreshCw, Clock } from "lucide-react";
+import { Check, CreditCard, Copy, ArrowLeft, Loader2, RefreshCw, Clock, MessageCircle } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 
-type PaymentStatus = "generating" | "pending" | "checking" | "confirmed" | "failed";
+type PaymentStatus = "generating" | "pending" | "checking" | "confirmed" | "failed" | "requires_plan";
+
+// Pricing tiers based on number of raffle numbers
+const getPublicationFee = (totalNumbers: number): { amount: number; display: string } | null => {
+  if (totalNumbers >= 1000 && totalNumbers <= 10000) {
+    return { amount: 97.00, display: "R$ 97,00" };
+  } else if (totalNumbers > 10000 && totalNumbers <= 50000) {
+    return { amount: 149.00, display: "R$ 149,00" };
+  } else if (totalNumbers > 50000 && totalNumbers <= 100000) {
+    return { amount: 197.00, display: "R$ 197,00" };
+  } else if (totalNumbers > 100000) {
+    return null; // Requires advanced plan - contact support
+  }
+  // Below 1000 numbers - use minimum tier
+  return { amount: 97.00, display: "R$ 97,00" };
+};
 
 const PagamentoTaxa = () => {
   const [copied, setCopied] = useState(false);
   const [pixCode, setPixCode] = useState("");
   const [raffleName, setRaffleName] = useState("");
+  const [totalNumbers, setTotalNumbers] = useState(0);
   const [status, setStatus] = useState<PaymentStatus>("generating");
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const raffleId = searchParams.get("raffle_id");
 
-  const taxaValue = "R$ 9,90";
+  const pricing = getPublicationFee(totalNumbers);
 
   const loadRaffleAndGeneratePayment = useCallback(async () => {
     if (!raffleId) {
@@ -35,7 +51,7 @@ const PagamentoTaxa = () => {
 
     const { data: raffle, error } = await supabase
       .from("raffles")
-      .select("name, status")
+      .select("name, status, total_numbers")
       .eq("id", raffleId)
       .single();
 
@@ -59,6 +75,14 @@ const PagamentoTaxa = () => {
     }
 
     setRaffleName(raffle.name);
+    setTotalNumbers(raffle.total_numbers);
+
+    // Check if requires advanced plan
+    const rafflePricing = getPublicationFee(raffle.total_numbers);
+    if (!rafflePricing) {
+      setStatus("requires_plan");
+      return;
+    }
 
     try {
       const { data: paymentData, error: paymentError } = await supabase.functions.invoke(
@@ -66,7 +90,7 @@ const PagamentoTaxa = () => {
         {
           body: {
             raffle_id: raffleId,
-            amount: 9.90,
+            amount: rafflePricing.amount,
             description: `Taxa de publicação - ${raffle.name}`,
           },
         }
@@ -177,6 +201,36 @@ const PagamentoTaxa = () => {
     );
   }
 
+  // Requires advanced plan - show support screen
+  if (status === "requires_plan") {
+    return (
+      <DashboardLayout>
+        <div className="w-full max-w-sm mx-auto px-4 flex flex-col items-center justify-center min-h-[50vh]">
+          <div className="h-16 w-16 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+            <MessageCircle size={32} className="text-primary" />
+          </div>
+          <h2 className="text-lg font-bold text-foreground mb-2 text-center">Plano Avançado Necessário</h2>
+          <p className="text-sm text-muted-foreground text-center mb-4">
+            Rifas com mais de 100.000 números requerem um plano avançado.
+          </p>
+          <p className="text-sm text-muted-foreground text-center mb-6">
+            Entre em contato com o suporte para contratar o plano e liberar sua rifa.
+          </p>
+          <div className="flex flex-col gap-3 w-full">
+            <Button onClick={() => navigate("/suporte")} className="w-full">
+              <MessageCircle size={16} />
+              Falar com Suporte
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/rifas")} className="w-full">
+              <ArrowLeft size={16} />
+              Voltar para Minhas Rifas
+            </Button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="w-full max-w-xs mx-auto px-2 pb-6 overflow-x-hidden">
@@ -204,9 +258,13 @@ const PagamentoTaxa = () => {
 
         <Card className="mb-3">
           <CardContent className="p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-muted-foreground">Qtd. de números</span>
+              <span className="text-sm font-medium text-foreground">{totalNumbers.toLocaleString('pt-BR')}</span>
+            </div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-muted-foreground">Taxa de publicação</span>
-              <span className="text-xl font-bold text-gradient">{taxaValue}</span>
+              <span className="text-xl font-bold text-gradient">{pricing?.display || "—"}</span>
             </div>
 
             <div className="border-2 border-dashed border-border rounded-lg p-3 text-center mb-3">

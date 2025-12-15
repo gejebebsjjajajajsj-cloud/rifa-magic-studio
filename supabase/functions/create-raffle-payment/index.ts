@@ -176,18 +176,40 @@ Deno.serve(async (req) => {
           ownerProfile.syncpayments_client_id,
           ownerProfile.syncpayments_client_secret
         );
-        paymentResult = await createSyncPayment(accessToken, amount, description, purchase_id, supabaseUrl, purchase.buyer_name, purchase.buyer_email);
-        
-        console.log("SyncPayments response:", JSON.stringify(paymentResult));
+        paymentResult = await createSyncPayment(
+          accessToken,
+          amount,
+          description,
+          purchase_id,
+          supabaseUrl,
+          purchase.buyer_name,
+          purchase.buyer_email
+        );
+
+        console.log("Raw SyncPayments response:", JSON.stringify(paymentResult));
+
+        // Algumas contas retornam os dados aninhados em `data`
+        const syncData = (paymentResult as any).data || paymentResult;
+
+        const idTransaction =
+          (syncData as any).idTransaction ||
+          (syncData as any).idtransaction;
+        const paymentCode = (syncData as any).paymentCode;
+        const paymentCodeBase64 = (syncData as any).paymentCodeBase64;
+
+        if (!idTransaction || !paymentCode) {
+          console.error("SyncPayments response missing payment fields", syncData);
+          throw new Error("Resposta inválida do provedor de pagamento");
+        }
         
         // Save transaction
         await supabase.from("payment_transactions").insert({
           raffle_id: raffle.id,
-          transaction_id: paymentResult.idTransaction,
+          transaction_id: idTransaction,
           amount: amount,
           status: "pending",
           payment_type: "raffle_purchase",
-          pix_code: paymentResult.paymentCode,
+          pix_code: paymentCode,
         });
 
         return new Response(
@@ -195,10 +217,10 @@ Deno.serve(async (req) => {
             success: true,
             gateway: "syncpayments",
             payment: {
-              id: paymentResult.idTransaction,
-              pix_code: paymentResult.paymentCode,
-              qr_code: paymentResult.paymentCodeBase64 
-                ? `data:image/png;base64,${paymentResult.paymentCodeBase64}` 
+              id: idTransaction,
+              pix_code: paymentCode,
+              qr_code: paymentCodeBase64
+                ? `data:image/png;base64,${paymentCodeBase64}`
                 : null,
             },
           }),

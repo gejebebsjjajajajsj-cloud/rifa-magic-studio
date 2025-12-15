@@ -282,22 +282,12 @@ const EditarRifa = () => {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-medium">Categoria</label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => updateFormData("category", cat)}
-                      className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        formData.category === cat
-                          ? "gradient-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
+                <Input
+                  placeholder="Ex: Eletrônicos, Beleza, etc."
+                  value={formData.category}
+                  onChange={(e) => updateFormData("category", e.target.value)}
+                  className="h-9 text-sm"
+                />
               </div>
 
               <div className="space-y-1.5">

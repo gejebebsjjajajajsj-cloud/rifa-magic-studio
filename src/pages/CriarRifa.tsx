@@ -298,22 +298,12 @@ const CriarRifa = () => {
                 <label className="text-sm font-medium text-foreground">
                   Categoria *
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => updateFormData("category", cat)}
-                      className={`px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                        formData.category === cat
-                          ? "gradient-primary text-primary-foreground shadow-soft"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80"
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
+                <Input
+                  placeholder="Ex: Eletrônicos, Beleza, Conteúdo +18, etc."
+                  value={formData.category}
+                  onChange={(e) => updateFormData("category", e.target.value)}
+                  className="rounded-xl border-2"
+                />
               </div>
 
               <div className="space-y-2">

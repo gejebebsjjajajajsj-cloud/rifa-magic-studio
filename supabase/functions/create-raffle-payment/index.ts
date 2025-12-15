@@ -26,33 +26,52 @@ async function getSyncPaymentsToken(clientId: string, clientSecret: string): Pro
 async function createSyncPayment(accessToken: string, amount: number, description: string, purchaseId: string, supabaseUrl: string, buyerName: string, buyerEmail: string) {
   const expirationDate = new Date();
   expirationDate.setDate(expirationDate.getDate() + 2);
+  const expirationDateStr = expirationDate.toISOString().slice(0, 10); // YYYY-MM-DD
 
   // SyncPayments requires amount in cents (integer)
   const amountInCents = Math.round(amount * 100);
 
   const paymentBody = {
     ip: "127.0.0.1",
-    pix: { expiresInDays: 2 },
-    items: [{ title: description, quantity: 1, tangible: false, unitPrice: amountInCents }],
+    pix: { expiresInDays: expirationDateStr },
+    items: [
+      {
+        title: description,
+        quantity: 1,
+        tangible: false,
+        unitPrice: amountInCents,
+      },
+    ],
     amount: amountInCents,
     customer: {
       cpf: "00000000000",
       name: buyerName || "Cliente",
       email: buyerEmail || "cliente@email.com",
       phone: "00000000000",
-      externalRef: purchaseId,
+      externaRef: purchaseId,
       address: {
-        city: "São Paulo", state: "SP", street: "Rua Principal", country: "BR",
-        zipCode: "00000000", complement: "", neighborhood: "Centro", streetNumber: "1",
+        city: "São Paulo",
+        state: "SP",
+        street: "Rua Principal",
+        country: "BR",
+        zipCode: "00000000",
+        complement: "",
+        neighborhood: "Centro",
+        streetNumber: "1",
       },
     },
-    metadata: { provider: "RifaMania", purchase_id: purchaseId, type: "raffle_purchase" },
+    metadata: {
+      provider: "RifaMania",
+      sell_url: supabaseUrl,
+      order_url: `${supabaseUrl}/functions/v1/payment-webhook`,
+      user_email: buyerEmail || "cliente@exemplo.com",
+      user_identitication_number: "00000000000",
+    },
     traceable: true,
     postbackUrl: `${supabaseUrl}/functions/v1/payment-webhook`,
   };
 
   console.log("SyncPayments request body:", JSON.stringify(paymentBody));
-
   console.log("Creating SyncPayments payment...");
   const response = await fetch("https://api.syncpayments.com.br/v1/gateway/api", {
     method: "POST",

@@ -1,18 +1,15 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { 
   MessageCircle, 
-  Mail, 
-  Phone, 
   HelpCircle,
-  Send,
   ExternalLink
 } from "lucide-react";
 
 const Suporte = () => {
+  const whatsappNumber = "5511919367563";
+  const whatsappLink = `https://wa.me/${whatsappNumber}`;
+
   const faqs = [
     {
       question: "Como criar minha primeira rifa?",
@@ -20,11 +17,11 @@ const Suporte = () => {
     },
     {
       question: "Qual é o valor da taxa de publicação?",
-      answer: "A taxa de publicação é de R$ 9,90 por rifa, paga uma única vez no momento da publicação.",
+      answer: "A taxa varia de acordo com a quantidade de números: R$ 97 (até 10mil), R$ 149 (até 50mil) ou R$ 197 (até 100mil).",
     },
     {
       question: "Como recebo os pagamentos das vendas?",
-      answer: "Os pagamentos são feitos diretamente na sua chave Pix cadastrada, sem intermediários.",
+      answer: "Os pagamentos são processados automaticamente via Mercado Pago e vão direto para sua conta.",
     },
     {
       question: "Posso editar uma rifa após publicar?",
@@ -41,28 +38,26 @@ const Suporte = () => {
           <p className="text-muted-foreground">Como podemos ajudar?</p>
         </div>
 
-        {/* Contact Options */}
-        <div className="grid sm:grid-cols-3 gap-4">
-          {[
-            { icon: MessageCircle, label: "Chat", description: "Fale conosco", color: "gradient-primary" },
-            { icon: Mail, label: "Email", description: "suporte@rifafacil.com", color: "bg-lavender" },
-            { icon: Phone, label: "WhatsApp", description: "(11) 99999-9999", color: "bg-mint" },
-          ].map((contact, index) => (
-            <Card
-              key={index}
-              className="cursor-pointer hover:shadow-glow transition-all duration-300 animate-fade-in"
-              style={{ animationDelay: `${index * 0.1}s` }}
+        {/* WhatsApp Contact */}
+        <Card className="animate-fade-in">
+          <CardContent className="p-6">
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-4 p-4 bg-green-500/10 hover:bg-green-500/20 rounded-2xl transition-all duration-300"
             >
-              <CardContent className="p-6 text-center">
-                <div className={`h-14 w-14 ${contact.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-                  <contact.icon size={24} className="text-primary-foreground" />
-                </div>
-                <h3 className="font-semibold text-foreground mb-1">{contact.label}</h3>
-                <p className="text-sm text-muted-foreground">{contact.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              <div className="h-14 w-14 bg-green-500 rounded-2xl flex items-center justify-center">
+                <MessageCircle size={28} className="text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground text-lg">WhatsApp</h3>
+                <p className="text-muted-foreground">(11) 91936-7563</p>
+              </div>
+              <ExternalLink size={20} className="text-muted-foreground" />
+            </a>
+          </CardContent>
+        </Card>
 
         {/* FAQ Section */}
         <Card className="animate-fade-in stagger-2">
@@ -85,35 +80,6 @@ const Suporte = () => {
           </CardContent>
         </Card>
 
-        {/* Contact Form */}
-        <Card className="animate-fade-in stagger-3">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Send size={20} />
-              Enviar Mensagem
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Assunto</label>
-              <Input placeholder="Qual é o assunto?" />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Mensagem</label>
-              <Textarea
-                placeholder="Descreva sua dúvida ou problema..."
-                rows={5}
-                className="rounded-xl border-2 resize-none"
-              />
-            </div>
-
-            <Button>
-              <Send size={18} />
-              Enviar mensagem
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   );

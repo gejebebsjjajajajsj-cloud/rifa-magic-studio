@@ -201,26 +201,36 @@ const PagamentoTaxa = () => {
     );
   }
 
-  // Requires advanced plan - show support screen
+  // Requires advanced plan - show support screen with WhatsApp
   if (status === "requires_plan") {
+    const whatsappNumber = "5511919367563";
+    const whatsappLink = `https://wa.me/${whatsappNumber}?text=Olá! Gostaria de contratar o plano avançado para rifas com mais de 100.000 números.`;
+    
     return (
       <DashboardLayout>
         <div className="w-full max-w-sm mx-auto px-4 flex flex-col items-center justify-center min-h-[50vh]">
-          <div className="h-16 w-16 bg-primary/20 rounded-full flex items-center justify-center mb-4">
-            <MessageCircle size={32} className="text-primary" />
+          <div className="h-16 w-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
+            <MessageCircle size={32} className="text-green-500" />
           </div>
           <h2 className="text-lg font-bold text-foreground mb-2 text-center">Plano Avançado Necessário</h2>
           <p className="text-sm text-muted-foreground text-center mb-4">
             Rifas com mais de 100.000 números requerem um plano avançado.
           </p>
           <p className="text-sm text-muted-foreground text-center mb-6">
-            Entre em contato com o suporte para contratar o plano e liberar sua rifa.
+            Entre em contato pelo WhatsApp para contratar o plano e liberar sua rifa.
           </p>
           <div className="flex flex-col gap-3 w-full">
-            <Button onClick={() => navigate("/suporte")} className="w-full">
-              <MessageCircle size={16} />
-              Falar com Suporte
-            </Button>
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full"
+            >
+              <Button className="w-full bg-green-500 hover:bg-green-600">
+                <MessageCircle size={16} />
+                Chamar no WhatsApp
+              </Button>
+            </a>
             <Button variant="outline" onClick={() => navigate("/rifas")} className="w-full">
               <ArrowLeft size={16} />
               Voltar para Minhas Rifas

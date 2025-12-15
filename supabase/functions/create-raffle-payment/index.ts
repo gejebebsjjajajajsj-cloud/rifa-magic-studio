@@ -23,30 +23,35 @@ async function getSyncPaymentsToken(clientId: string, clientSecret: string): Pro
   return authData.access_token;
 }
 
-async function createSyncPayment(accessToken: string, amount: number, description: string, purchaseId: string, supabaseUrl: string) {
+async function createSyncPayment(accessToken: string, amount: number, description: string, purchaseId: string, supabaseUrl: string, buyerName: string, buyerEmail: string) {
   const expirationDate = new Date();
   expirationDate.setDate(expirationDate.getDate() + 2);
 
+  // SyncPayments requires amount in cents (integer)
+  const amountInCents = Math.round(amount * 100);
+
   const paymentBody = {
     ip: "127.0.0.1",
-    pix: { expiresInDays: expirationDate.toISOString().split('T')[0] },
-    items: [{ title: description, quantity: 1, tangible: false, unitPrice: amount }],
-    amount: amount,
+    pix: { expiresInDays: 2 },
+    items: [{ title: description, quantity: 1, tangible: false, unitPrice: amountInCents }],
+    amount: amountInCents,
     customer: {
       cpf: "00000000000",
-      name: "Cliente",
-      email: "cliente@email.com",
+      name: buyerName || "Cliente",
+      email: buyerEmail || "cliente@email.com",
       phone: "00000000000",
-      externaRef: purchaseId,
+      externalRef: purchaseId,
       address: {
         city: "São Paulo", state: "SP", street: "Rua Principal", country: "BR",
-        zipCode: "00000-000", complement: "", neighborhood: "Centro", streetNumber: "1",
+        zipCode: "00000000", complement: "", neighborhood: "Centro", streetNumber: "1",
       },
     },
     metadata: { provider: "RifaMania", purchase_id: purchaseId, type: "raffle_purchase" },
     traceable: true,
     postbackUrl: `${supabaseUrl}/functions/v1/payment-webhook`,
   };
+
+  console.log("SyncPayments request body:", JSON.stringify(paymentBody));
 
   console.log("Creating SyncPayments payment...");
   const response = await fetch("https://api.syncpayments.com.br/v1/gateway/api", {
@@ -171,7 +176,9 @@ Deno.serve(async (req) => {
           ownerProfile.syncpayments_client_id,
           ownerProfile.syncpayments_client_secret
         );
-        paymentResult = await createSyncPayment(accessToken, amount, description, purchase_id, supabaseUrl);
+        paymentResult = await createSyncPayment(accessToken, amount, description, purchase_id, supabaseUrl, purchase.buyer_name, purchase.buyer_email);
+        
+        console.log("SyncPayments response:", JSON.stringify(paymentResult));
         
         // Save transaction
         await supabase.from("payment_transactions").insert({

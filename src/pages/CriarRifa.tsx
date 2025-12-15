@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -63,6 +63,9 @@ const CriarRifa = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [prizeTiers, setPrizeTiers] = useState<PrizeTier[]>([{ prizeValue: 50, quantity: 5 }]);
+  const [noEndDate, setNoEndDate] = useState(false);
+  const [hasMercadoPago, setHasMercadoPago] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -79,6 +82,31 @@ const CriarRifa = () => {
     imageUrl: "",
     bannerUrl: "",
   });
+
+  // Check if user has Mercado Pago connected
+  useEffect(() => {
+    const checkPaymentMethod = async () => {
+      if (!user) return;
+      
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('mercado_pago_access_token')
+          .eq('user_id', user.id)
+          .single();
+
+        if (data?.mercado_pago_access_token) {
+          setHasMercadoPago(true);
+        }
+      } catch (error) {
+        console.error('Error checking payment method:', error);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    checkPaymentMethod();
+  }, [user]);
 
   const updateFormData = (key: string, value: string | number) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -100,10 +128,18 @@ const CriarRifa = () => {
 
   const nextStep = () => {
     if (currentStep === 1) {
-      if (!formData.name || !formData.description || !formData.category || !formData.endDate) {
+      if (!formData.name || !formData.description || !formData.category) {
         toast({
           title: "Preencha todos os campos",
-          description: "Nome, descrição, categoria e data são obrigatórios",
+          description: "Nome, descrição e categoria são obrigatórios",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!noEndDate && !formData.endDate) {
+        toast({
+          title: "Preencha a data",
+          description: "Selecione uma data de término ou marque 'Sem data de término'",
           variant: "destructive",
         });
         return;
@@ -282,13 +318,33 @@ const CriarRifa = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">
-                  Data de Término *
+                  Data de Término
                 </label>
-                <Input
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => updateFormData("endDate", e.target.value)}
-                />
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={noEndDate}
+                      onChange={(e) => {
+                        setNoEndDate(e.target.checked);
+                        if (e.target.checked) {
+                          updateFormData("endDate", "");
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      Sem data de término (rifa ativa até vender todos os números)
+                    </span>
+                  </label>
+                  {!noEndDate && (
+                    <Input
+                      type="date"
+                      value={formData.endDate}
+                      onChange={(e) => updateFormData("endDate", e.target.value)}
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -608,29 +664,49 @@ const CriarRifa = () => {
               </p>
             </div>
 
-            <Card className="border-2 border-primary/20 bg-secondary/30">
-              <CardContent className="p-4 text-center space-y-3">
-                <CreditCard size={32} className="mx-auto text-primary" />
-                <div>
-                  <h4 className="font-semibold text-foreground">Pagamento Automático</h4>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Conecte sua conta Mercado Pago ou SyncPayments nas <strong>Configurações</strong> para receber os pagamentos das suas rifas automaticamente.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => window.open('/configuracoes', '_blank')}
-                  className="mt-2"
-                >
-                  Ir para Configurações
-                </Button>
-              </CardContent>
-            </Card>
+            {loadingProfile ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : hasMercadoPago ? (
+              <Card className="border-2 border-green-500/30 bg-green-500/5">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 bg-green-500 rounded-xl flex items-center justify-center">
+                      <CheckCircle size={24} className="text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-foreground">Conectado ao Mercado Pago</h4>
+                      <p className="text-sm text-green-600">
+                        Seus compradores poderão pagar via PIX automaticamente
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-2 border-destructive/30 bg-destructive/5">
+                <CardContent className="p-4 text-center space-y-3">
+                  <CreditCard size={32} className="mx-auto text-destructive" />
+                  <div>
+                    <h4 className="font-semibold text-foreground">Nenhum pagamento conectado</h4>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Você precisa conectar sua conta Mercado Pago nas <strong>Configurações</strong> para receber pagamentos.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => window.open('/configuracoes', '_blank')}
+                    className="mt-2"
+                  >
+                    Conectar Mercado Pago
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
             <div className="text-xs text-muted-foreground text-center p-3 bg-muted/50 rounded-xl">
-              <p>✓ Pix instantâneo via SyncPayments</p>
-              <p>✓ Cartão de crédito via Mercado Pago</p>
+              <p>✓ Pix instantâneo via Mercado Pago</p>
             </div>
           </div>
         );
@@ -682,7 +758,12 @@ const CriarRifa = () => {
                   <div>
                     <p className="text-sm text-muted-foreground">Término</p>
                     <p className="font-semibold text-foreground">
-                      {formData.endDate ? new Date(formData.endDate).toLocaleDateString("pt-BR") : "Não informado"}
+                      {noEndDate 
+                        ? "Sem data de término" 
+                        : formData.endDate 
+                          ? new Date(formData.endDate).toLocaleDateString("pt-BR") 
+                          : "Não informado"
+                      }
                     </p>
                   </div>
                   <div>
@@ -714,7 +795,10 @@ const CriarRifa = () => {
                 <div className="pt-4 border-t border-border">
                   <p className="text-sm text-muted-foreground">Pagamento</p>
                   <p className="text-foreground">
-                    Automático via Mercado Pago / SyncPayments
+                    {hasMercadoPago 
+                      ? "✓ Conectado ao Mercado Pago"
+                      : "⚠️ Nenhum pagamento conectado"
+                    }
                   </p>
                 </div>
               </CardContent>

@@ -33,7 +33,8 @@ async function createSyncPayment(accessToken: string, amount: number, descriptio
 
   const paymentBody = {
     ip: "127.0.0.1",
-    pix: { expiresInDays: expirationDateStr },
+    // SyncPayments espera um número de dias, não uma data string
+    pix: { expiresInDays: 2 },
     items: [
       {
         title: description,
@@ -48,7 +49,7 @@ async function createSyncPayment(accessToken: string, amount: number, descriptio
       name: buyerName || "Cliente",
       email: buyerEmail || "cliente@email.com",
       phone: "00000000000",
-      externaRef: purchaseId,
+      externalRef: purchaseId,
       address: {
         city: "São Paulo",
         state: "SP",

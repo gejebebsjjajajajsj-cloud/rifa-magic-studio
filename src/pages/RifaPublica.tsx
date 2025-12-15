@@ -671,7 +671,7 @@ const RifaPublica = () => {
 
       {/* Purchase Dialog - Mobile First */}
       <Dialog open={showPurchaseDialog} onOpenChange={handleCloseDialog}>
-        <DialogContent className="fixed inset-x-3 top-[50%] translate-y-[-50%] w-auto max-w-[calc(100vw-24px)] sm:max-w-sm bg-zinc-900 border-zinc-800 text-white p-3 sm:p-5 max-h-[calc(100vh-48px)] overflow-y-auto overflow-x-hidden rounded-xl">
+        <DialogContent className="w-full max-w-[90vw] sm:max-w-sm bg-zinc-900 border-zinc-800 text-white p-3 sm:p-5 max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-xl">
           <DialogHeader className="pb-2">
             <DialogTitle className="text-white text-sm">
               {checkoutStep === "form" && "Finalizar compra"}

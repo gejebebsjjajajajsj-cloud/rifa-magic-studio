@@ -12,6 +12,7 @@ import {
   X,
   User,
   Eye,
+  Users,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { Button } from "./ui/button";
@@ -23,6 +24,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: Ticket, label: "Minhas Rifas", path: "/rifas" },
   { icon: PlusCircle, label: "Criar Rifa", path: "/criar-rifa" },
+  { icon: Users, label: "Clientes", path: "/clientes" },
   { icon: CreditCard, label: "Pagamentos", path: "/pagamentos" },
   { icon: Settings, label: "Configurações", path: "/configuracoes" },
   { icon: HelpCircle, label: "Suporte", path: "/suporte" },
@@ -31,8 +33,8 @@ const menuItems = [
 const bottomNavItems = [
   { icon: LayoutDashboard, label: "Início", path: "/dashboard" },
   { icon: PlusCircle, label: "Criar", path: "/criar-rifa" },
+  { icon: Users, label: "Clientes", path: "/clientes" },
   { icon: Ticket, label: "Rifas", path: "/rifas" },
-  { icon: CreditCard, label: "Pagamentos", path: "/pagamentos" },
   { icon: User, label: "Perfil", path: "/configuracoes" },
 ];
 

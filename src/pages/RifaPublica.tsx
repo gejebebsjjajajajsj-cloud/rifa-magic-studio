@@ -669,11 +669,11 @@ const RifaPublica = () => {
         </div>
       </div>
 
-      {/* Purchase Dialog */}
+      {/* Purchase Dialog - Mobile First */}
       <Dialog open={showPurchaseDialog} onOpenChange={handleCloseDialog}>
-        <DialogContent className="w-[calc(100vw-24px)] max-w-sm bg-zinc-900 border-zinc-800 text-white p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-white text-sm sm:text-base">
+        <DialogContent className="fixed inset-x-3 top-[50%] translate-y-[-50%] w-auto max-w-[calc(100vw-24px)] sm:max-w-sm bg-zinc-900 border-zinc-800 text-white p-3 sm:p-5 max-h-[calc(100vh-48px)] overflow-y-auto overflow-x-hidden rounded-xl">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-white text-sm">
               {checkoutStep === "form" && "Finalizar compra"}
               {checkoutStep === "payment" && "Pague via PIX"}
               {checkoutStep === "success" && "Pagamento confirmado!"}
@@ -681,42 +681,42 @@ const RifaPublica = () => {
           </DialogHeader>
 
           {checkoutStep === "form" && (
-            <div className="space-y-3 pt-2">
-              <div className="bg-zinc-800 rounded-lg p-3 text-center">
-                <p className="text-xs text-zinc-400">Você está adquirindo</p>
-                <p className="text-xl font-bold text-white">{quantity} títulos</p>
-                <p className="text-base font-bold" style={{ color: primaryColor }}>
+            <div className="space-y-3">
+              <div className="bg-zinc-800 rounded-lg p-2.5 text-center">
+                <p className="text-[10px] text-zinc-400">Você está adquirindo</p>
+                <p className="text-lg font-bold text-white">{quantity} títulos</p>
+                <p className="text-sm font-bold" style={{ color: primaryColor }}>
                   R$ {totalAmount.toFixed(2).replace(".", ",")}
                 </p>
               </div>
               
               <div className="space-y-2">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-zinc-300">Nome completo *</label>
+                <div className="space-y-0.5">
+                  <label className="text-[10px] font-medium text-zinc-300">Nome completo *</label>
                   <Input
                     placeholder="Seu nome"
                     value={buyerName}
                     onChange={(e) => setBuyerName(e.target.value)}
-                    className="h-9 text-sm bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                    className="h-8 text-sm bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-zinc-300">Email *</label>
+                <div className="space-y-0.5">
+                  <label className="text-[10px] font-medium text-zinc-300">Email *</label>
                   <Input
                     type="email"
                     placeholder="seu@email.com"
                     value={buyerEmail}
                     onChange={(e) => setBuyerEmail(e.target.value)}
-                    className="h-9 text-sm bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                    className="h-8 text-sm bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-zinc-300">Telefone (opcional)</label>
+                <div className="space-y-0.5">
+                  <label className="text-[10px] font-medium text-zinc-300">Telefone (opcional)</label>
                   <Input
                     placeholder="(00) 00000-0000"
                     value={buyerPhone}
                     onChange={(e) => setBuyerPhone(e.target.value)}
-                    className="h-9 text-sm bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                    className="h-8 text-sm bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
                   />
                 </div>
               </div>
@@ -724,13 +724,13 @@ const RifaPublica = () => {
               <Button
                 onClick={handlePurchase}
                 disabled={purchasing}
-                className="w-full h-10 text-sm font-bold rounded-lg text-white"
+                className="w-full h-9 text-sm font-bold rounded-lg text-white"
                 style={{ backgroundColor: buttonColor }}
               >
                 {purchasing ? (
                   <>
-                    <Loader2 size={16} className="animate-spin mr-2" />
-                    Gerando pagamento...
+                    <Loader2 size={14} className="animate-spin mr-1.5" />
+                    Gerando...
                   </>
                 ) : (
                   "Confirmar e pagar"
@@ -740,54 +740,63 @@ const RifaPublica = () => {
           )}
 
           {checkoutStep === "payment" && (
-            <div className="space-y-3 pt-2">
-              <div className="bg-zinc-800 rounded-lg p-2 sm:p-3 text-center">
-                <p className="text-[10px] sm:text-xs text-zinc-400 mb-0.5">Valor a pagar</p>
-                <p className="text-xl sm:text-2xl font-bold" style={{ color: primaryColor }}>
+            <div className="flex flex-col items-center justify-center space-y-3">
+              {/* Valor */}
+              <div className="bg-zinc-800 rounded-lg px-4 py-2 text-center w-full">
+                <p className="text-[10px] text-zinc-400">Valor a pagar</p>
+                <p className="text-xl font-bold" style={{ color: primaryColor }}>
                   R$ {totalAmount.toFixed(2).replace(".", ",")}
                 </p>
               </div>
 
-              {/* QR Code - sempre gera via SVG se tiver pixCode */}
-              <div className="border-2 border-dashed border-zinc-700 rounded-lg p-3 text-center">
-                {pixCode ? (
-                  <>
-                    {qrCodeImage ? (
-                      <img src={qrCodeImage} alt="QR Code PIX" className="w-32 h-32 sm:w-40 sm:h-40 mx-auto rounded" />
+              {/* QR Code - Centralizado e responsivo */}
+              <div className="flex flex-col items-center justify-center w-full">
+                <div className="border-2 border-dashed border-zinc-700 rounded-lg p-3 flex flex-col items-center justify-center">
+                  {pixCode ? (
+                    qrCodeImage ? (
+                      <img 
+                        src={qrCodeImage} 
+                        alt="QR Code PIX" 
+                        className="w-[min(50vw,160px)] h-[min(50vw,160px)] rounded object-contain" 
+                      />
                     ) : (
-                      <QRCodeSVG value={pixCode} size={140} level="M" className="mx-auto" />
-                    )}
-                  </>
-                ) : (
-                  <div className="w-32 h-32 sm:w-40 sm:h-40 mx-auto bg-zinc-800 rounded flex items-center justify-center">
-                    <Loader2 className="animate-spin text-zinc-500" />
-                  </div>
-                )}
-                <p className="text-[9px] sm:text-[10px] text-zinc-500 mt-2">
-                  Escaneie o QR Code com o app do seu banco
-                </p>
+                      <QRCodeSVG 
+                        value={pixCode} 
+                        size={Math.min(window.innerWidth * 0.45, 160)} 
+                        level="M" 
+                      />
+                    )
+                  ) : (
+                    <div className="w-[min(50vw,160px)] h-[min(50vw,160px)] bg-zinc-800 rounded flex items-center justify-center">
+                      <Loader2 className="animate-spin text-zinc-500" size={24} />
+                    </div>
+                  )}
+                  <p className="text-[9px] text-zinc-500 mt-2 text-center">
+                    Escaneie com o app do banco
+                  </p>
+                </div>
               </div>
 
-              {/* PIX Code Copy */}
-              <div className="space-y-1">
-                <p className="text-[9px] sm:text-[10px] font-medium text-zinc-400">Ou copie o código PIX:</p>
-                <div className="flex gap-1.5">
-                  <div className="flex-1 bg-zinc-800 rounded-md p-1.5 sm:p-2 text-[8px] sm:text-[10px] text-zinc-400 font-mono truncate overflow-hidden max-w-[calc(100%-40px)]">
+              {/* PIX Code Copy - Quebra de linha automática */}
+              <div className="w-full space-y-1">
+                <p className="text-[9px] font-medium text-zinc-400">Ou copie o código PIX:</p>
+                <div className="flex gap-1.5 items-center">
+                  <div className="flex-1 bg-zinc-800 rounded-md p-2 text-[8px] text-zinc-400 font-mono break-all overflow-hidden leading-tight max-h-16 overflow-y-auto">
                     {pixCode}
                   </div>
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={handleCopyPix}
-                    className="flex-shrink-0 h-7 w-7 sm:h-8 sm:w-8 bg-zinc-800 border-zinc-700"
+                    className="flex-shrink-0 h-8 w-8 bg-zinc-800 border-zinc-700 hover:bg-zinc-700"
                   >
-                    {copied ? <Check size={12} /> : <Copy size={12} />}
+                    {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
                   </Button>
                 </div>
               </div>
 
-              <p className="text-[9px] sm:text-[10px] text-zinc-500 text-center">
-                Após o pagamento, seus números serão confirmados automaticamente.
+              <p className="text-[9px] text-zinc-500 text-center leading-tight">
+                Após o pagamento, seus números serão confirmados.
                 <br />
                 <Link to="/meus-numeros" className="text-emerald-400 underline">
                   Consulte seus números aqui

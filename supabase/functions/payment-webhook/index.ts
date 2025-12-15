@@ -18,9 +18,11 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // SyncPayments sends: idTransaction, status_transaction, metadata
-    const transactionId = body.idTransaction || body.id || body.transaction_id;
-    const status = body.status_transaction || body.status;
+    // SyncPayments sends data nested: { data: { idtransaction, status, ... } }
+    // Also handle direct format for other gateways
+    const webhookData = body.data || body;
+    const transactionId = webhookData.idtransaction || webhookData.idTransaction || webhookData.id || body.idTransaction || body.id || body.transaction_id;
+    const status = webhookData.status || body.status_transaction || body.status;
     const metadata = body.metadata || {};
 
     if (!transactionId) {
